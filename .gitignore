@@ -1,0 +1,12 @@
+.DS_Store
+target/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+# avoid pushing files from local docker build
+docker/scuttle
+docker/*.jar
