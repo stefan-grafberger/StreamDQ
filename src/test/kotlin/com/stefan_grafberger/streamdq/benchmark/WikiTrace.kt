@@ -2,7 +2,6 @@ package com.stefan_grafberger.streamdq.benchmark
 
 import de.bytefish.jtinycsvparser.CsvParser
 import de.bytefish.jtinycsvparser.CsvParserOptions
-import de.bytefish.jtinycsvparser.builder.IObjectCreator
 import de.bytefish.jtinycsvparser.mapping.CsvMapping
 import de.bytefish.jtinycsvparser.tokenizer.StringSplitTokenizer
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -19,12 +18,12 @@ data class WikiTrace @JvmOverloads constructor(
     var dbUpdate: String? = null
 )
 
-class WikiTraceMapper(creator: IObjectCreator<WikiTrace?>) : CsvMapping<WikiTrace?>(creator) {
+class WikiTraceMapper(creator: () -> WikiTrace) : CsvMapping<WikiTrace>(creator) {
     init {
-        mapProperty(0, Int::class.java) { wikiTrace: WikiTrace?, intValue: Int -> wikiTrace?.counter = intValue }
-        mapProperty(1, String::class.java) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.timestamp = stringValue }
-        mapProperty(2, String::class.java) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.url = stringValue }
-        mapProperty(3, String::class.java) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.dbUpdate = stringValue }
+        mapProperty(0, Int::class.javaObjectType) { wikiTrace: WikiTrace?, intValue: Int -> wikiTrace?.counter = intValue }
+        mapProperty(1, String::class.javaObjectType) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.timestamp = stringValue }
+        mapProperty(2, String::class.javaObjectType) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.url = stringValue }
+        mapProperty(3, String::class.javaObjectType) { wikiTrace: WikiTrace?, stringValue: String -> wikiTrace?.dbUpdate = stringValue }
     }
 }
 
@@ -37,7 +36,7 @@ class WikiTraceSource(private var sourceFilePath: String) : SourceFunction<WikiT
     override fun run(sourceContext: SourceContext<WikiTrace?>) {
         val csvSourcePath: Path = FileSystems.getDefault().getPath(sourceFilePath)
         createWikiTraceParser()
-            .readFromFile(csvSourcePath, StandardCharsets.ISO_8859_1)
+            .readFromFile(csvSourcePath, StandardCharsets.ISO_8859_1) // ISO_8859_1?
             .filter { x -> x.isValid }
             .map { x -> x.result }
             .use { stream ->
@@ -58,7 +57,7 @@ class WikiTraceSource(private var sourceFilePath: String) : SourceFunction<WikiT
             return CsvParser(
                 CsvParserOptions(
                     false,
-                    StringSplitTokenizer(" ", false)
+                    StringSplitTokenizer("\\t", false),
                 ),
                 WikiTraceMapper { WikiTrace() }
             )

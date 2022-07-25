@@ -11,7 +11,7 @@ class WikiTraceBenchmark {
     private val resourceName: String = "/clickstream-zhwiki-2022-06.tsv"
 
     private fun getResourceFileName(): String {
-        return javaClass.getResource(resourceName).toString()
+        return javaClass.getResource(resourceName).path
     }
 
     @Test
