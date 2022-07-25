@@ -28,6 +28,7 @@
         <ktlint-maven-plugin.version>1.13.1</ktlint-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
         <assertj.version>3.11.1</assertj.version>
+        <jtinycsvparser.version>1.2</jtinycsvparser.version>
 
         <!-- Kotlin -->
         <kotlin.version>1.4.32</kotlin.version>
@@ -145,6 +146,12 @@
             <artifactId>kotlin-test</artifactId>
             <version>${kotlin.version}</version>
             <scope>test</scope>
+        </dependency>
+        <!-- For benchmarking like in https://github.com/tlindener/ApproximateQueries. -->
+        <dependency>
+            <groupId>de.bytefish</groupId>
+            <artifactId>jtinycsvparser</artifactId>
+            <version>${jtinycsvparser.version}</version>
         </dependency>
     </dependencies>
 

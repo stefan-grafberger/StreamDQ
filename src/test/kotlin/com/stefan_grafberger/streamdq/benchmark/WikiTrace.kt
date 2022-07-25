@@ -36,7 +36,7 @@ class WikiTraceSource(private var sourceFilePath: String) : SourceFunction<WikiT
     override fun run(sourceContext: SourceContext<WikiTrace?>) {
         val csvSourcePath: Path = FileSystems.getDefault().getPath(sourceFilePath)
         createWikiTraceParser()
-            .readFromFile(csvSourcePath, StandardCharsets.ISO_8859_1) // ISO_8859_1?
+            .readFromFile(csvSourcePath, StandardCharsets.UTF_8) // Really old WikiTrace files may use ISO_8859_1
             .filter { x -> x.isValid }
             .map { x -> x.result }
             .use { stream ->

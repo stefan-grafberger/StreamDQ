@@ -8,7 +8,7 @@ import org.junit.jupiter.api.TestInstance
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WikiTraceBenchmark {
 
-    private val resourceName: String = "/clickstream-zhwiki-2022-06.tsv"
+    private val resourceName: String = "/clickstream-dewiki-2022-05.tsv"
 
     private fun getResourceFileName(): String {
         return javaClass.getResource(resourceName).path
