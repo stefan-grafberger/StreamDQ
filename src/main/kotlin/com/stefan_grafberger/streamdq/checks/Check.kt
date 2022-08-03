@@ -28,7 +28,10 @@ data class AggregateConstraintResult(
     override var constraintName: String? = null
 ) : ConstraintResult()
 
-data class AggregateCheckResult(override var constraintResults: List<AggregateConstraintResult>? = null) : CheckResult<AggregateConstraintResult>()
+data class AggregateCheckResult<KEY>(
+    override var constraintResults: List<AggregateConstraintResult>? = null,
+    var partitionKeyValue: KEY? = null
+) : CheckResult<AggregateConstraintResult>()
 
 data class RowLevelConstraintResult(
     override var outcome: Boolean? = null,

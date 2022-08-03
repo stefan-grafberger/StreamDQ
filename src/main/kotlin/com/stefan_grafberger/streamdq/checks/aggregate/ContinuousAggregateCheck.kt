@@ -26,7 +26,7 @@ data class ContinuousAggregateCheck<W : Window> (val trigger: Trigger<Any?, W>) 
     ): AllWindowedStream<IN, Window> {
         val windowedStream = accessedfieldStream.windowAll(GlobalWindows.create())
         val triggerStream = if (this.trigger is CountTrigger && mergeKeyedResultsOnly) {
-            // TODO: When the window/trigger is not time-based, the order can get messed up
+            // When the window/trigger is not time-based, the order can get messed up
             //  when stream is partitioned and everything is count based only.
             //  In that case, we could also think about using countTriggerAll and process everything
             //  without partitioning to guarantee correct results. However, performance is horrible then.
@@ -76,6 +76,13 @@ data class ContinuousAggregateCheck<W : Window> (val trigger: Trigger<Any?, W>) 
         expectedUpperBound: Double? = null
     ): ContinuousAggregateCheck<W> {
         this.constraints.add(ApproxQuantileConstraint(keyExpressionString, quantile, expectedLowerBound, expectedUpperBound))
+        return this
+    }
+
+    fun aggregateResultsPerKeyToGlobalResult(
+        computeGlobalResult: Boolean
+    ): ContinuousAggregateCheck<W> {
+        this.aggregateResultsPerKeyToGlobalResult = computeGlobalResult
         return this
     }
 }

@@ -5,6 +5,7 @@ import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.MapFunctionsWrapper
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
+import com.stefan_grafberger.streamdq.datasketches.AddKeyInfo
 import com.stefan_grafberger.streamdq.datasketches.KeyedAggregateFunctionsWrapper
 import com.stefan_grafberger.streamdq.datasketches.KeyedFinalAggregateFunction
 import com.stefan_grafberger.streamdq.datasketches.NonKeyedAggregateFunctionsWrapper
@@ -20,7 +21,7 @@ class AnalysisRunner {
         rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
         continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
         config: ExecutionConfig?
-    ): com.stefan_grafberger.streamdq.VerificationResult<IN> {
+    ): VerificationResult<IN, Any> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
         val streamObjectTypeInfo: TypeInformation<IN> = stream.type
 
@@ -34,7 +35,7 @@ class AnalysisRunner {
         )
 
         val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
-        return com.stefan_grafberger.streamdq.VerificationResult(
+        return VerificationResult(
             rowLevelResultMap,
             aggregateResultMap,
             rowLevelCheckIndexMap
@@ -46,7 +47,7 @@ class AnalysisRunner {
         rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
         continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
         config: ExecutionConfig?
-    ): com.stefan_grafberger.streamdq.VerificationResult<IN> {
+    ): VerificationResult<IN, KEY> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
         val streamObjectTypeInfo: TypeInformation<IN> = stream.type
 
@@ -60,7 +61,7 @@ class AnalysisRunner {
         )
 
         val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
-        return com.stefan_grafberger.streamdq.VerificationResult(
+        return VerificationResult(
             rowLevelResultMap,
             aggregateResultMap,
             rowLevelCheckIndexMap
@@ -72,8 +73,8 @@ class AnalysisRunner {
         windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
         streamObjectTypeInfo: TypeInformation<IN>,
         config: ExecutionConfig?
-    ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult>> {
-        val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult>> = mutableMapOf()
+    ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>> {
+        val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>> = mutableMapOf()
         val uniqueContinuousAggChecks = windowChecksWithPotentialDuplicates.toSet().toList()
         // TODO: Performance optimization: use one shared stream per identical trigger/window
         //  But could also rely on user for now to specify checks accordingly
@@ -82,17 +83,23 @@ class AnalysisRunner {
             val aggregateFunctions = check.constraints.map { constraint ->
                 constraint.getAggregateFunction(streamObjectTypeInfo, config)
             }
-            val windowProcessingFunctionWrapper = KeyedAggregateFunctionsWrapper(aggregateFunctions)
-            // TODO: This aggregate call here is the problem for the KeyedStream. We need to get state per partition
-            //  per window, then combine the results of each partition to only have one global result per window
-            //  Maybe leave it as an aggregate function, but use an emtpy getResult function that outputs the state
-            //  And then we can have a seperate windowAll followed by the correct trigger to combine the
-            //  state results and then do the original getResult. Can use inheritance to not have too much code
-            //  duplication
-            val processedWindowStream = windowedStream.aggregate(windowProcessingFunctionWrapper)
-            val allWindowedStream = check.addWindowOrTriggerNonKeyed(processedWindowStream, true)
-            val windowResultMergeFunctionWrapper = KeyedFinalAggregateFunction(aggregateFunctions)
-            val resultStream = allWindowedStream.aggregate(windowResultMergeFunctionWrapper)
+            val resultStream = if (check.aggregateResultsPerKeyToGlobalResult) {
+                // We need to get the state per partition per window, then combine the results of each partition to only
+                //  have one global result per window
+                val windowProcessingFunctionWrapper = KeyedAggregateFunctionsWrapper(aggregateFunctions)
+                val processedWindowStream = windowedStream.aggregate(windowProcessingFunctionWrapper)
+                val allWindowedStream = check.addWindowOrTriggerNonKeyed(processedWindowStream, true)
+
+                val windowResultMergeFunctionWrapper = KeyedFinalAggregateFunction<IN, KEY>(aggregateFunctions)
+                allWindowedStream.aggregate(windowResultMergeFunctionWrapper)
+            } else {
+                // We need to get the state per partition per window, and can then return the result without
+                //  merging it to one global result
+                val functionWrapper = NonKeyedAggregateFunctionsWrapper<IN, KEY>(aggregateFunctions)
+                windowedStream.aggregate(functionWrapper, AddKeyInfo())
+            }
+            @Suppress("UNCHECKED_CAST")
+            resultStream as DataStream<AggregateCheckResult<KEY>>
             aggregateResultMap[check] = resultStream
         }
         return aggregateResultMap
@@ -103,17 +110,17 @@ class AnalysisRunner {
         windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
         streamObjectTypeInfo: TypeInformation<IN>,
         config: ExecutionConfig?
-    ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult>> {
-        val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult>> = mutableMapOf()
+    ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult<Any>>> {
+        val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult<Any>>> = mutableMapOf()
         val uniqueContinuousAggChecks = windowChecksWithPotentialDuplicates.toSet().toList()
         // TODO: Performance optimization: use one shared stream per identical trigger/window
         uniqueContinuousAggChecks.forEach { check ->
-            val windowedStream = check.addWindowOrTriggerNonKeyed(baseStream, false)
+            val allWindowedStream = check.addWindowOrTriggerNonKeyed(baseStream, false)
             val aggregateFunctions = check.constraints.map { constraint ->
                 constraint.getAggregateFunction(streamObjectTypeInfo, config)
             }
-            val functionWrapper = NonKeyedAggregateFunctionsWrapper(aggregateFunctions)
-            val resultStream = windowedStream.aggregate(functionWrapper)
+            val functionWrapper = NonKeyedAggregateFunctionsWrapper<IN, Any>(aggregateFunctions)
+            val resultStream = allWindowedStream.aggregate(functionWrapper)
             aggregateResultMap[check] = resultStream
         }
         return aggregateResultMap

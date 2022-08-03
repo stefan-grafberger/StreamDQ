@@ -15,6 +15,7 @@ import org.apache.flink.streaming.api.windowing.windows.Window
 
 abstract class InternalAggregateCheck : Check() {
     val constraints: MutableList<AggregateConstraint> = mutableListOf()
+    var aggregateResultsPerKeyToGlobalResult: Boolean = true
     abstract fun <IN, KEY> addWindowOrTriggerKeyed(accessedfieldStream: KeyedStream<IN, KEY>):
         WindowedStream<IN, KEY, Window>
     abstract fun <IN> addWindowOrTriggerNonKeyed(accessedfieldStream: DataStream<IN>, mergeKeyedResultsOnly: Boolean):

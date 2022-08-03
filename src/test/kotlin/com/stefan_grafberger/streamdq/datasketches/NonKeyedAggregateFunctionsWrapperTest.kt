@@ -1,6 +1,7 @@
 package com.stefan_grafberger.streamdq.datasketches
 
 import com.stefan_grafberger.streamdq.TestUtils.assertAggregateConstraintResultsWithNameAsString
+import com.stefan_grafberger.streamdq.data.ClickInfo
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
@@ -20,7 +21,7 @@ class NonKeyedAggregateFunctionsWrapperTest {
             KllSketchAggregate(rawStream.type, 0.9, null, null, "test", "nestedInfo.nestedDoubleValue", env.config)
         )
 
-        val functionWrapper = NonKeyedAggregateFunctionsWrapper(aggregateFunctions)
+        val functionWrapper = NonKeyedAggregateFunctionsWrapper<ClickInfo, Any>(aggregateFunctions)
         val aggregateFunctionResults = rawStream
             .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(100)))
             .aggregate(functionWrapper)
@@ -47,7 +48,7 @@ class NonKeyedAggregateFunctionsWrapperTest {
             KllSketchAggregate(rawStream.type, 0.9, null, null, "test", "nestedInfo.nestedDoubleValue", env.config)
         )
 
-        val functionWrapper = NonKeyedAggregateFunctionsWrapper(aggregateFunctions)
+        val functionWrapper = NonKeyedAggregateFunctionsWrapper<ClickInfo, Any>(aggregateFunctions)
         val aggregateFunctionResults = rawStream
             .windowAll(GlobalWindows.create())
             .trigger(CountTrigger.of(3))

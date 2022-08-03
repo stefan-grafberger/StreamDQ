@@ -6,13 +6,13 @@ import org.apache.flink.api.common.functions.RichMapFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class AggregateCheckResultsMetricsExporter : RichMapFunction<AggregateCheckResult, AggregateCheckResult>() {
+class AggregateCheckResultsMetricsExporter<KEY> : RichMapFunction<AggregateCheckResult<KEY>, AggregateCheckResult<KEY>>() {
     // TODO: we should use generics here and merge both metric exporters into one
 
     private val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     private val metricHoldersByCheck: MutableMap<String, AggregateCounterTriplet> = mutableMapOf()
 
-    override fun map(checkResults: AggregateCheckResult): AggregateCheckResult {
+    override fun map(checkResults: AggregateCheckResult<KEY>): AggregateCheckResult<KEY> {
         checkResults.constraintResults
             ?.forEach {
                 val pair = lookUpCounter(it)
