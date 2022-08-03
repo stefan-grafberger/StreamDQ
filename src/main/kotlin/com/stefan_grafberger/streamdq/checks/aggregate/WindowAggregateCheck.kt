@@ -59,4 +59,11 @@ data class WindowAggregateCheck<W : Window>(val aggregateWindowAssigner: WindowA
         this.constraints.add(ApproxQuantileConstraint(keyExpressionString, quantile, expectedLowerBound, expectedUpperBound))
         return this
     }
+
+    fun withGlobalResultComputedFromResultsPerKey(
+        computeGlobalResult: Boolean
+    ): WindowAggregateCheck<W> {
+        this.aggregateResultsPerKeyToGlobalResult = computeGlobalResult
+        return this
+    }
 }

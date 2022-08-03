@@ -8,8 +8,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
 import org.apache.flink.types.Row
 
-class NonKeyedAggregateFunctionsWrapper<T>(val aggregateFunctions: List<TypeQueryableAggregateFunction<T>>) :
-    AggregateFunction<T, Any, AggregateCheckResult>, ResultTypeQueryable<AggregateCheckResult> {
+class NonKeyedAggregateFunctionsWrapper<T, KEY>(val aggregateFunctions: List<TypeQueryableAggregateFunction<T>>) :
+    AggregateFunction<T, Any, AggregateCheckResult<KEY>>, ResultTypeQueryable<AggregateCheckResult<KEY>> {
 
     override fun createAccumulator(): Row {
         val accumulators = aggregateFunctions.map { aggregateFunction -> aggregateFunction.createAccumulator() }
@@ -28,7 +28,7 @@ class NonKeyedAggregateFunctionsWrapper<T>(val aggregateFunctions: List<TypeQuer
         return Row.of(*additionResults)
     }
 
-    override fun getResult(rowAggregation: Any): AggregateCheckResult {
+    override fun getResult(rowAggregation: Any): AggregateCheckResult<KEY> {
         rowAggregation as Row
         val aggregationResults = aggregateFunctions
             .zip(0 until rowAggregation.arity)
@@ -52,7 +52,8 @@ class NonKeyedAggregateFunctionsWrapper<T>(val aggregateFunctions: List<TypeQuer
         return Row.of(*aggregationResults)
     }
 
-    override fun getProducedType(): TypeInformation<AggregateCheckResult> {
-        return TypeInformation.of(AggregateCheckResult::class.java)
+    override fun getProducedType(): TypeInformation<AggregateCheckResult<KEY>> {
+        @Suppress("UNCHECKED_CAST")
+        return TypeInformation.of(AggregateCheckResult::class.java) as TypeInformation<AggregateCheckResult<KEY>>
     }
 }

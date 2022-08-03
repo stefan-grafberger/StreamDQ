@@ -8,13 +8,13 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.KeyedStream
 
-data class VerificationResult<IN>(
+data class VerificationResult<IN, KEY>(
     private val rowLevelCheckResults: Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>>,
-    private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult>>,
+    private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>>,
     private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>
 ) {
 
-    fun getResultsForCheck(check: InternalAggregateCheck): DataStream<AggregateCheckResult>? {
+    fun getResultsForCheck(check: InternalAggregateCheck): DataStream<AggregateCheckResult<KEY>>? {
         return aggregateCheckResults[check]
     }
 
@@ -57,18 +57,18 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
         return this
     }
 
-    fun build(): VerificationResult<IN> {
+    fun build(): VerificationResult<IN, *> {
         return when (stream) {
             is KeyedStream<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as KeyedStream<IN, KEY>
-                com.stefan_grafberger.streamdq.AnalysisRunner()
+                AnalysisRunner()
                     .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
             }
             is DataStream<*> -> {
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as DataStream<IN>
-                com.stefan_grafberger.streamdq.AnalysisRunner()
+                AnalysisRunner()
                     .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
             }
             else -> {

@@ -32,7 +32,7 @@ object TestUtils {
     }
 
     fun <IN> collectRowLevelResultStreamAndAssertLen(
-        verificationResult: VerificationResult<IN>,
+        verificationResult: VerificationResult<IN, *>,
         rowLevelCheck: RowLevelCheck,
         expectedResultStreamLen: Int
     ): List<RowLevelCheckResult<IN>> {
@@ -66,7 +66,7 @@ object TestUtils {
     ) = rowLevelCheck.constraints[constraintIndex].toString()
 
     private fun getAggregateConstraintResultsByIndex(
-        collectedResultOne: List<AggregateCheckResult>,
+        collectedResultOne: List<AggregateCheckResult<*>>,
         constraintIndex: Int
     ): Triple<String?, Array<Double>, Array<Boolean>> {
         val constraintName = collectedResultOne[constraintIndex].constraintResults!![constraintIndex].constraintName
@@ -110,11 +110,11 @@ object TestUtils {
         Assertions.assertEquals(expectedExceptionMessage, exception.message)
     }
 
-    fun collectAggregateResultStreamAndAssertLen(
-        verificationResult: VerificationResult<ClickInfo>,
+    fun<KEY> collectAggregateResultStreamAndAssertLen(
+        verificationResult: VerificationResult<ClickInfo, KEY>,
         aggregateCheck: InternalAggregateCheck,
         expectedResultStreamLen: Int
-    ): List<AggregateCheckResult> {
+    ): List<AggregateCheckResult<KEY>> {
         val resultStream = when (aggregateCheck) {
             is ContinuousAggregateCheck<*> -> verificationResult.getResultsForCheck(aggregateCheck)
             is WindowAggregateCheck<*> -> verificationResult.getResultsForCheck(aggregateCheck)
@@ -126,7 +126,7 @@ object TestUtils {
     }
 
     fun assertAggregateConstraintResults(
-        result: List<AggregateCheckResult>,
+        result: List<AggregateCheckResult<*>>,
         constraintIndex: Int,
         aggregateCheck: InternalAggregateCheck,
         expectedMetrics: DoubleArray,
@@ -138,8 +138,8 @@ object TestUtils {
         Assertions.assertArrayEquals(expectedOutcomes, outcomeArray)
     }
 
-    fun assertAggregateConstraintResultsWithNameAsString(
-        result: List<AggregateCheckResult>,
+    fun<KEY> assertAggregateConstraintResultsWithNameAsString(
+        result: List<AggregateCheckResult<KEY>>,
         constraintIndex: Int,
         aggregateCheckName: String,
         expectedMetrics: DoubleArray,

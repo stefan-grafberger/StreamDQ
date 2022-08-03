@@ -6,10 +6,13 @@ import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
+import org.apache.flink.streaming.api.windowing.windows.Window
 import org.apache.flink.types.Row
+import org.apache.flink.util.Collector
 
-class KeyedFinalAggregateFunction<IN>(val aggregateFunctions: List<TypeQueryableAggregateFunction<IN>>) :
-    AggregateFunction<Row, Any, AggregateCheckResult>, ResultTypeQueryable<AggregateCheckResult> {
+class KeyedFinalAggregateFunction<IN, KEY>(val aggregateFunctions: List<TypeQueryableAggregateFunction<IN>>) :
+    AggregateFunction<Row, Any, AggregateCheckResult<Any>>, ResultTypeQueryable<AggregateCheckResult<KEY>> {
 
     override fun createAccumulator(): Row {
         val accumulators = aggregateFunctions.map { aggregateFunction -> aggregateFunction.createAccumulator() }
@@ -22,7 +25,7 @@ class KeyedFinalAggregateFunction<IN>(val aggregateFunctions: List<TypeQueryable
         return this.merge(rowAggregation, input)
     }
 
-    override fun getResult(rowAggregation: Any): AggregateCheckResult {
+    override fun getResult(rowAggregation: Any): AggregateCheckResult<Any> {
         rowAggregation as Row
         val aggregationResults = aggregateFunctions
             .zip(0 until rowAggregation.arity)
@@ -46,7 +49,24 @@ class KeyedFinalAggregateFunction<IN>(val aggregateFunctions: List<TypeQueryable
         return Row.of(*aggregationResults)
     }
 
-    override fun getProducedType(): TypeInformation<AggregateCheckResult> {
-        return TypeInformation.of(AggregateCheckResult::class.java)
+    override fun getProducedType(): TypeInformation<AggregateCheckResult<KEY>> {
+        @Suppress("UNCHECKED_CAST")
+        return TypeInformation.of(AggregateCheckResult::class.java) as TypeInformation<AggregateCheckResult<KEY>>
+    }
+}
+
+class AddKeyInfo<KEY, WINDOW : Window> :
+    ProcessWindowFunction<AggregateCheckResult<KEY>?, AggregateCheckResult<KEY>?, KEY?, WINDOW?>() {
+    override fun process(
+        key: KEY?,
+        context: Context?,
+        aggregationResults: MutableIterable<AggregateCheckResult<KEY>?>?,
+        out: Collector<AggregateCheckResult<KEY>?>?
+    ) {
+        val outputList = aggregationResults?.iterator()?.asSequence()?.toList()
+        outputList?.forEach { aggregationResult ->
+            aggregationResult?.partitionKeyValue = key
+            out?.collect(aggregationResult)
+        }
     }
 }
