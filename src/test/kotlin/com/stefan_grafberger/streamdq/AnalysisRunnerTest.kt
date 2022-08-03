@@ -242,12 +242,12 @@ class AnalysisRunnerTest {
         val aggregateChecks = listOf(
             AggregateCheck()
                 .onWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .aggregateResultsPerKeyToGlobalResult(false)
+                .withGlobalResultComputedFromResultsPerKey(false)
                 .hasApproxCountDistinctBetween("userId", 4)
                 .hasApproxCountDistinctBetween("nestedInfo.nestedStringValue", null, 3),
             AggregateCheck()
                 .onWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .aggregateResultsPerKeyToGlobalResult(false)
+                .withGlobalResultComputedFromResultsPerKey(false)
                 .hasApproxQuantileBetween("intValue", 0.5, 7.0)
                 .hasApproxQuantileBetween("nestedInfo.nestedDoubleValue", 0.9, null, 10.0)
         )

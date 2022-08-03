@@ -64,8 +64,7 @@ class AddKeyInfo<KEY, WINDOW : Window> :
         out: Collector<AggregateCheckResult<KEY>?>?
     ) {
         val outputList = aggregationResults?.iterator()?.asSequence()?.toList()
-        outputList?.forEach {
-                aggregationResult ->
+        outputList?.forEach { aggregationResult ->
             aggregationResult?.partitionKeyValue = key
             out?.collect(aggregationResult)
         }

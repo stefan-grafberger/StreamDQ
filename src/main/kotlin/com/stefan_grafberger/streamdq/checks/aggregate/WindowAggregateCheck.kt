@@ -60,7 +60,7 @@ data class WindowAggregateCheck<W : Window>(val aggregateWindowAssigner: WindowA
         return this
     }
 
-    fun aggregateResultsPerKeyToGlobalResult(
+    fun withGlobalResultComputedFromResultsPerKey(
         computeGlobalResult: Boolean
     ): WindowAggregateCheck<W> {
         this.aggregateResultsPerKeyToGlobalResult = computeGlobalResult
