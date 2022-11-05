@@ -36,6 +36,22 @@ data class RowLevelCheck(val constraints: MutableList<RowLevelConstraint> = muta
         this.constraints.add(RowValueMatchesPattern(keyExpressionString, regexExpression))
         return this
     }
+
+    fun isNonNegative(keyExpressionString: String): RowLevelCheck {
+        this.constraints.add(RowValueIsNonNegative(keyExpressionString))
+        return this
+    }
+
+    fun listLengthInRange(
+        keyExpressionString: String,
+        expectedLowerBound: Int? = null,
+        expectedUpperBound: Int? = null
+    ): RowLevelCheck {
+        this.constraints.add(ListLengthInRange(keyExpressionString, expectedLowerBound, expectedUpperBound))
+        return this
+    }
+
+
 }
 
 abstract class RowLevelConstraint : Constraint() {
