@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 
 data class ListLengthInRange(
     override val keyExpressionString: String,
-    val expectedLowerBound: Int? = null, // TODO: Non-Double Types
+    val expectedLowerBound: Int? = null,
     val expectedUpperBound: Int? = null
 ) :
     RowLevelConstraint() {
@@ -53,5 +53,4 @@ class ListLengthInRangeRowMapFunction<T>(
                 (expectedUpperBound == null || expectedUpperBound >= listLength)
         return RowLevelConstraintResult(withinBounds, checkName)
     }
-
 }

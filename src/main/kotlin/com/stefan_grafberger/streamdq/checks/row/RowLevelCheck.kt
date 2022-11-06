@@ -50,8 +50,6 @@ data class RowLevelCheck(val constraints: MutableList<RowLevelConstraint> = muta
         this.constraints.add(ListLengthInRange(keyExpressionString, expectedLowerBound, expectedUpperBound))
         return this
     }
-
-
 }
 
 abstract class RowLevelConstraint : Constraint() {

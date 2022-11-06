@@ -51,7 +51,3 @@ class RowValueIsNonNegativeRowMapFunction<T>(
         return RowLevelConstraintResult(isNonNegative, checkName)
     }
 }
-
-
-
-
