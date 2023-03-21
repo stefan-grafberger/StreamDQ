@@ -1,6 +1,6 @@
 name: Java CI
 
-on: [push]
+on: [ push ]
 
 jobs:
   build:
@@ -14,5 +14,11 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
           cache: maven
-      - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+
+      # build
+      - name: Build with maven
+        run: mvn $MAVEN_CLI_OPTS clean test-compile package $MAVEN_EXTRA_STEP -Dit.skip=true -Dut.skip=true $MAVEN_EXTRA_OPTS
+
+      # Test
+      - name: Test with maven
+        run: mvn $MAVEN_CLI_OPTS test -Dit.skip=true $MAVEN_EXTRA_OPTS
