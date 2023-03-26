@@ -1,5 +1,6 @@
 package com.stefan_grafberger.streamdq
 
+import com.stefan_grafberger.streamdq.anomalydetection.detector.AnomalyCheck
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
@@ -9,9 +10,9 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.KeyedStream
 
 data class VerificationResult<IN, KEY>(
-    private val rowLevelCheckResults: Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>>,
-    private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>>,
-    private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>
+        private val rowLevelCheckResults: Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>>,
+        private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>>,
+        private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>
 ) {
 
     fun getResultsForCheck(check: InternalAggregateCheck): DataStream<AggregateCheckResult<KEY>>? {
@@ -36,6 +37,7 @@ class VerificationSuite {
 class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config: ExecutionConfig?) {
     var rowLevelChecks = mutableListOf<RowLevelCheck>()
     var aggChecks = mutableListOf<InternalAggregateCheck>()
+    var anomalyChecks = mutableListOf<AnomalyCheck>()
 
     fun addRowLevelCheck(newRowLevelCheck: RowLevelCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
         rowLevelChecks.add(newRowLevelCheck)
@@ -57,20 +59,30 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
         return this
     }
 
+    /**
+     * able to add only one anomaly checks
+     */
+    fun addAnomalyCheck(newAnomalyCheck: AnomalyCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
+        anomalyChecks.add(newAnomalyCheck)
+        return this
+    }
+
     fun build(): VerificationResult<IN, *> {
         return when (stream) {
             is KeyedStream<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as KeyedStream<IN, KEY>
                 AnalysisRunner()
-                    .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
             }
+
             is DataStream<*> -> {
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as DataStream<IN>
                 AnalysisRunner()
-                    .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
             }
+
             else -> {
                 throw IllegalStateException("This should never happen!")
             }
