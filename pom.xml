@@ -146,6 +146,20 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- LomBok Project -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+        </dependency>
+
+        <!-- Kotlin Statistics -->
+        <dependency>
+            <groupId>org.nield</groupId>
+            <artifactId>kotlin-statistics</artifactId>
+            <version>1.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
