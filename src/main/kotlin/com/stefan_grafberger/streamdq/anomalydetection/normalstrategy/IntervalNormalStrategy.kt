@@ -5,9 +5,9 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(
-        private var lowerDeviationBound: Double? = 3.0,
-        private var upperDeviationBound: Double? = 3.0,
-        private var includeInterval: Boolean = false
+        private val lowerDeviationBound: Double? = 3.0,
+        private val upperDeviationBound: Double? = 3.0,
+        private val includeInterval: Boolean = false
 ) : AnomalyDetectionStrategy {
 
     init {
@@ -47,7 +47,7 @@ class IntervalNormalStrategy(
 
         dataStream.forEachIndexed { index, value ->
             if (value < lowerBound || value > upperBound) {
-                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
+                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]"
                 res.add(Pair(index, Anomaly(value, 1.0, detail)))
             }
         }
