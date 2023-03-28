@@ -7,7 +7,7 @@ import org.nield.kotlinstatistics.standardDeviation
 class IntervalNormalStrategy(
         private var lowerDeviationBound: Double? = 3.0,
         private var upperDeviationBound: Double? = 3.0,
-        private var includeInterval: Boolean = false, // trailing comma
+        private var includeInterval: Boolean = false
 ) : AnomalyDetectionStrategy {
 
     init {
