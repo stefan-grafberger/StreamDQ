@@ -5,15 +5,19 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(
-        private val lowerDeviationBound: Double? = 3.0,
-        private val upperDeviationBound: Double? = 3.0,
-        private val includeInterval: Boolean = false
+    private val lowerDeviationFactor: Double? = 3.0,
+    private val upperDeviationFactor: Double? = 3.0,
+    private val includeInterval: Boolean = false
 ) : AnomalyDetectionStrategy {
 
     init {
-        require(lowerDeviationBound != null || upperDeviationBound != null) { "At least one factor has to be specified." }
-        require((lowerDeviationBound ?: 1.0) >= 0 && (upperDeviationBound
-                ?: 1.0) >= 0) { "Factors cannot be smaller than zero." }
+        require(lowerDeviationFactor != null || upperDeviationFactor != null) { "At least one factor has to be specified." }
+        require(
+            (lowerDeviationFactor ?: 1.0) >= 0 && (
+                upperDeviationFactor
+                    ?: 1.0
+                ) >= 0
+        ) { "Factors cannot be smaller than zero." }
     }
 
     override fun detect(dataStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
@@ -42,8 +46,8 @@ class IntervalNormalStrategy(
             stdDev = dataSeriesWithoutInterval.standardDeviation()
         }
 
-        val upperBound = mean + (upperDeviationBound ?: Double.MAX_VALUE) * stdDev
-        val lowerBound = mean - (lowerDeviationBound ?: Double.MAX_VALUE) * stdDev
+        val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
+        val lowerBound = mean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
         dataStream.forEachIndexed { index, value ->
             if (value < lowerBound || value > upperBound) {
