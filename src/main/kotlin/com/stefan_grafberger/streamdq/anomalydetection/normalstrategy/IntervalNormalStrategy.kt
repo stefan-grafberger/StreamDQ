@@ -49,7 +49,8 @@ class IntervalNormalStrategy(
         val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
         val lowerBound = mean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
-        dataStream.forEachIndexed { index, value ->
+        dataStream.slice(startInterval..endInterval)
+                .forEachIndexed { index, value ->
             if (value < lowerBound || value > upperBound) {
                 val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]"
                 res.add(Pair(index, Anomaly(value, 1.0, detail)))
