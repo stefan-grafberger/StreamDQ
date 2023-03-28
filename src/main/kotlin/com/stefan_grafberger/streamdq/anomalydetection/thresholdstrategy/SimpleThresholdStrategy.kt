@@ -4,8 +4,8 @@ import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 
 class SimpleThresholdStrategy(
-        lowerBound: Double,
-        upperBound: Double) : AnomalyDetectionStrategy {
+        private val lowerBound: Double,
+        private val upperBound: Double) : AnomalyDetectionStrategy {
 
     init {
         require(lowerBound <= upperBound) { "The lower bound must be smaller or equal to the upper bound." }
@@ -22,9 +22,10 @@ class SimpleThresholdStrategy(
         val (startInterval, endInterval) = searchInterval
         require(startInterval <= endInterval) { "The start of interval must be lower than the end" }
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
-        dataStream.forEachIndexed { index, value ->
-            if (value < startInterval || value > endInterval) {
-                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$startInterval, $endInterval]}"
+        dataStream.slice(startInterval..endInterval)
+                .forEachIndexed { index, value ->
+            if (value < lowerBound || value > upperBound) {
+                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
                 res.add(Pair(index, Anomaly(value, 1.0, detail)))
             }
         }
