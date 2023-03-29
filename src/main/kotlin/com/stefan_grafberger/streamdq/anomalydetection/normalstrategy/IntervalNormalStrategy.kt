@@ -5,18 +5,18 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(
-    private val lowerDeviationFactor: Double? = 3.0,
-    private val upperDeviationFactor: Double? = 3.0,
-    private val includeInterval: Boolean = false
+        private val lowerDeviationFactor: Double? = 3.0,
+        private val upperDeviationFactor: Double? = 3.0,
+        private val includeInterval: Boolean = false
 ) : AnomalyDetectionStrategy {
 
     init {
         require(lowerDeviationFactor != null || upperDeviationFactor != null) { "At least one factor has to be specified." }
         require(
-            (lowerDeviationFactor ?: 1.0) >= 0 && (
-                upperDeviationFactor
-                    ?: 1.0
-                ) >= 0
+                (lowerDeviationFactor ?: 1.0) >= 0 && (
+                        upperDeviationFactor
+                                ?: 1.0
+                        ) >= 0
         ) { "Factors cannot be smaller than zero." }
     }
 
@@ -51,11 +51,11 @@ class IntervalNormalStrategy(
 
         dataStream.slice(startInterval..endInterval)
                 .forEachIndexed { index, value ->
-            if (value < lowerBound || value > upperBound) {
-                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]"
-                res.add(Pair(index, Anomaly(value, 1.0, detail)))
-            }
-        }
+                    if (value < lowerBound || value > upperBound) {
+                        val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]"
+                        res.add(Pair(index, Anomaly(value, 1.0, detail)))
+                    }
+                }
         return res
     }
 }

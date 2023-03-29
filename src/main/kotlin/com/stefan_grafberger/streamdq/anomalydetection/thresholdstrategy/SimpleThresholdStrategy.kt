@@ -24,11 +24,11 @@ class SimpleThresholdStrategy(
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
         dataStream.slice(startInterval..endInterval)
                 .forEachIndexed { index, value ->
-            if (value < lowerBound || value > upperBound) {
-                val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
-                res.add(Pair(index, Anomaly(value, 1.0, detail)))
-            }
-        }
+                    if (value < lowerBound || value > upperBound) {
+                        val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
+                        res.add(Pair(index, Anomaly(value, 1.0, detail)))
+                    }
+                }
         return res
     }
 }
