@@ -102,7 +102,7 @@ class OnlineNormalStrategy(
                                 ?: Double.MAX_VALUE) * result.stdDev
                         val lowerBound = result.mean - (lowerDeviationFactor
                                 ?: Double.MAX_VALUE) * result.stdDev
-                        val detail = "[SimpleThresholdStrategy]: data value ${dataStream[index]} is not in [$lowerBound, $upperBound]"
+                        val detail = "[OnlineNormalStrategy]: data value ${dataStream[index]} is not in [$lowerBound, $upperBound]"
                         res.add(Pair(index, Anomaly(dataStream[index], 1.0, detail)))
                     }
                 }

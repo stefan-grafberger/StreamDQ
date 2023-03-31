@@ -52,7 +52,7 @@ class IntervalNormalStrategy(
         dataStream.slice(startInterval..endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
-                        val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]"
+                        val detail = "[IntervalNormalStrategy]: data value $value is not in [$lowerBound, $upperBound]"
                         res.add(Pair(index, Anomaly(value, 1.0, detail)))
                     }
                 }
