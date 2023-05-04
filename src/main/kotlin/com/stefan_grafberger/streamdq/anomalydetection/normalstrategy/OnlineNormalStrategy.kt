@@ -3,6 +3,11 @@ package com.stefan_grafberger.streamdq.anomalydetection.normalstrategy
 import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.model.OnlineNormalResultDto
+import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
+import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.*
+import org.apache.flink.streaming.api.windowing.windows.Window
 import kotlin.math.sqrt
 
 /**
@@ -107,5 +112,21 @@ class OnlineNormalStrategy(
                     }
                 }
         return res
+    }
+
+    override fun <R> getAggregateFunction(): SingleOutputStreamOperator<R> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <T> getAggregateFunction(streamObjectTypeInfo: TypeInformation<T>, config: ExecutionConfig?): TypeQueryableAggregateFunction<T> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <IN, KEY> addWindowOrTriggerKeyed(keyedStream: KeyedStream<IN, KEY>): WindowedStream<IN, KEY, Window> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <IN> addWindowOrTriggerNonKeyed(dataStream: DataStream<IN>, mergeKeyedResultsOnly: Boolean): AllWindowedStream<IN, Window> {
+        TODO("Not yet implemented")
     }
 }
