@@ -1,4 +1,4 @@
-package com.stefan_grafberger.streamdq.anomalydetection
+package com.stefan_grafberger.streamdq.anomalydetection.strategies
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction

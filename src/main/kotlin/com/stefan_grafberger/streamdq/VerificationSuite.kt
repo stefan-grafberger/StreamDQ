@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq
 
-import com.stefan_grafberger.streamdq.anomalydetection.detector.AnomalyCheck
+import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetector
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
@@ -37,7 +37,7 @@ class VerificationSuite {
 class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config: ExecutionConfig?) {
     var rowLevelChecks = mutableListOf<RowLevelCheck>()
     var aggChecks = mutableListOf<InternalAggregateCheck>()
-    var anomalyChecks = mutableListOf<AnomalyCheck>()
+    var anomalyChecks = mutableListOf<AnomalyDetector>()
 
     fun addRowLevelCheck(newRowLevelCheck: RowLevelCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
         rowLevelChecks.add(newRowLevelCheck)
@@ -62,7 +62,7 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
     /**
      * able to add only one anomaly checks
      */
-    fun addAnomalyCheck(newAnomalyCheck: AnomalyCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
+    fun addAnomalyCheck(newAnomalyCheck: AnomalyDetector): VerificationPipelineBuilder<STYPE, IN, KEY> {
         anomalyChecks.add(newAnomalyCheck)
         return this
     }

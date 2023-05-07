@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection
 
-import com.stefan_grafberger.streamdq.anomalydetection.normalstrategy.IntervalNormalStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

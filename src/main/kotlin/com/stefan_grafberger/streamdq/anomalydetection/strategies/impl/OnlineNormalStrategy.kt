@@ -1,8 +1,8 @@
-package com.stefan_grafberger.streamdq.anomalydetection.normalstrategy
+package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
-import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.model.OnlineNormalResultDto
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
