@@ -2,13 +2,10 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
-import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.*
-import org.apache.flink.streaming.api.windowing.windows.Window
+import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 
-class SimpleThresholdStrategy(
+abstract class SimpleThresholdStrategy(
         private val lowerBound: Double,
         private val upperBound: Double) : AnomalyDetectionStrategy {
 
@@ -19,15 +16,15 @@ class SimpleThresholdStrategy(
     /**
      * Search for anomalies in a stream of data
      *
-     * @param dataStream     The data contained in a List of Doubles
+     * @param cachedStream     The data contained in a List of Doubles
      * @param searchInterval The value range between which anomalies to be detected [a,b].
      * @return A list of Pairs with the indexes of anomalies in the interval and their corresponding wrapper object.
      */
-    override fun detect(dataStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
         val (startInterval, endInterval) = searchInterval
         require(startInterval <= endInterval) { "The start of interval must be lower than the end" }
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
-        dataStream.slice(startInterval..endInterval)
+        cachedStream.slice(startInterval..endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
                         val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
@@ -37,19 +34,7 @@ class SimpleThresholdStrategy(
         return res
     }
 
-    override fun <R> getAggregateFunction(): SingleOutputStreamOperator<R> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <T> getAggregateFunction(streamObjectTypeInfo: TypeInformation<T>, config: ExecutionConfig?): TypeQueryableAggregateFunction<T> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN, KEY> addWindowOrTriggerKeyed(keyedStream: KeyedStream<IN, KEY>): WindowedStream<IN, KEY, Window> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN> addWindowOrTriggerNonKeyed(dataStream: DataStream<IN>, mergeKeyedResultsOnly: Boolean): AllWindowedStream<IN, Window> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         TODO("Not yet implemented")
     }
 }

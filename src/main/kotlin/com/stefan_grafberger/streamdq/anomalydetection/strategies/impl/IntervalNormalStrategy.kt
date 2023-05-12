@@ -2,11 +2,8 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
-import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.*
-import org.apache.flink.streaming.api.windowing.windows.Window
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(
@@ -25,7 +22,7 @@ class IntervalNormalStrategy(
         ) { "Factors cannot be smaller than zero." }
     }
 
-    override fun detect(dataStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
 
         val (startInterval, endInterval) = searchInterval
         val mean: Double
@@ -33,19 +30,19 @@ class IntervalNormalStrategy(
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
 
         require(startInterval <= endInterval) { "The start of interval must be lower than the end." }
-        require(dataStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
+        require(cachedStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
 
         val searchIntervalLength = endInterval - startInterval
 
-        require(includeInterval || searchIntervalLength > dataStream.size) {
+        require(includeInterval || searchIntervalLength > cachedStream.size) {
             "Excluding values in searchInterval from calculation, but no more remaining values left to calculate mean/stdDev."
         }
 
         if (includeInterval) {
-            mean = dataStream.average(); stdDev = dataStream.standardDeviation()
+            mean = cachedStream.average(); stdDev = cachedStream.standardDeviation()
         } else {
-            val valuesBeforeInterval = dataStream.slice(0..startInterval)
-            val valuesAfterInterval = dataStream.slice(endInterval..dataStream.size)
+            val valuesBeforeInterval = cachedStream.slice(0..startInterval)
+            val valuesAfterInterval = cachedStream.slice(endInterval..cachedStream.size)
             val dataSeriesWithoutInterval = valuesBeforeInterval + valuesAfterInterval
             mean = dataSeriesWithoutInterval.average()
             stdDev = dataSeriesWithoutInterval.standardDeviation()
@@ -54,7 +51,7 @@ class IntervalNormalStrategy(
         val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
         val lowerBound = mean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
-        dataStream.slice(startInterval..endInterval)
+        cachedStream.slice(startInterval..endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
                         val detail = "[IntervalNormalStrategy]: data value $value is not in [$lowerBound, $upperBound]"
@@ -64,19 +61,7 @@ class IntervalNormalStrategy(
         return res
     }
 
-    override fun <R> getAggregateFunction(): SingleOutputStreamOperator<R> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <T> getAggregateFunction(streamObjectTypeInfo: TypeInformation<T>, config: ExecutionConfig?): TypeQueryableAggregateFunction<T> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN, KEY> addWindowOrTriggerKeyed(keyedStream: KeyedStream<IN, KEY>): WindowedStream<IN, KEY, Window> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN> addWindowOrTriggerNonKeyed(dataStream: DataStream<IN>, mergeKeyedResultsOnly: Boolean): AllWindowedStream<IN, Window> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         TODO("Not yet implemented")
     }
 }

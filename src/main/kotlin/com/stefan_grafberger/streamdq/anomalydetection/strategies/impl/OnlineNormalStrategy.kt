@@ -3,11 +3,9 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.model.OnlineNormalResultDto
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
-import com.stefan_grafberger.streamdq.checks.TypeQueryableAggregateFunction
-import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.*
-import org.apache.flink.streaming.api.windowing.windows.Window
+import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import kotlin.math.sqrt
 
 /**
@@ -44,7 +42,7 @@ class OnlineNormalStrategy(
      * calculation. To calculate the standard deviation, a helper variable Sn is used.
      */
     private fun computeStatsAndAnomalies(
-            dataStream: List<Double>,
+            cachedStream: List<Double>,
             searchInterval: Pair<Int, Int>)
             : List<OnlineNormalResultDto> {
         val resultList = mutableListOf<OnlineNormalResultDto>()
@@ -52,10 +50,10 @@ class OnlineNormalStrategy(
         var currentVariance = 0.0
         var sn = 0.0
 
-        val numValuesToExclude = dataStream.size * ignoreStartPercentage
+        val numValuesToExclude = cachedStream.size * ignoreStartPercentage
 
-        for (idx in dataStream.indices) {
-            val currentValue = dataStream[idx]
+        for (idx in cachedStream.indices) {
+            val currentValue = cachedStream[idx]
             val lastMean = currentMean
             val lastVariance = currentVariance
             val lastSn = sn
@@ -92,14 +90,14 @@ class OnlineNormalStrategy(
         return resultList
     }
 
-    override fun detect(dataStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
         val (startInterval, endInterval) = searchInterval
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
 
         require(startInterval <= endInterval) { "The start of interval must be lower than the end." }
-        require(dataStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
+        require(cachedStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
 
-        computeStatsAndAnomalies(dataStream, searchInterval)
+        computeStatsAndAnomalies(cachedStream, searchInterval)
                 .slice(startInterval..endInterval)
                 .forEachIndexed { index, result ->
                     if (result.isAnomaly) {
@@ -107,26 +105,20 @@ class OnlineNormalStrategy(
                                 ?: Double.MAX_VALUE) * result.stdDev
                         val lowerBound = result.mean - (lowerDeviationFactor
                                 ?: Double.MAX_VALUE) * result.stdDev
-                        val detail = "[OnlineNormalStrategy]: data value ${dataStream[index]} is not in [$lowerBound, $upperBound]"
-                        res.add(Pair(index, Anomaly(dataStream[index], 1.0, detail)))
+                        val detail = "[OnlineNormalStrategy]: data value ${cachedStream[index]} is not in [$lowerBound, $upperBound]"
+                        res.add(Pair(index, Anomaly(cachedStream[index], 1.0, detail)))
                     }
                 }
         return res
     }
 
-    override fun <R> getAggregateFunction(): SingleOutputStreamOperator<R> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <T> getAggregateFunction(streamObjectTypeInfo: TypeInformation<T>, config: ExecutionConfig?): TypeQueryableAggregateFunction<T> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN, KEY> addWindowOrTriggerKeyed(keyedStream: KeyedStream<IN, KEY>): WindowedStream<IN, KEY, Window> {
-        TODO("Not yet implemented")
-    }
-
-    override fun <IN> addWindowOrTriggerNonKeyed(dataStream: DataStream<IN>, mergeKeyedResultsOnly: Boolean): AllWindowedStream<IN, Window> {
-        TODO("Not yet implemented")
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+        val cachedStreamList = dataStream.executeAndCollect(100)
+                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
+        val cachedAnomalyResult = detect(cachedStreamList, Pair(0, cachedStreamList.size))
+                .map { resultPair -> resultPair.second }
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
+                .createLocalEnvironment()
+        return env.fromCollection(cachedAnomalyResult)
     }
 }
