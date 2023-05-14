@@ -3,12 +3,11 @@ package com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetec
 import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetector
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
+import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
-import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
 class AggregateAnomalyDetector(
@@ -27,10 +26,10 @@ class AggregateAnomalyDetector(
         this.strategy = strategy
     }
 
-    override fun detectAnomalyStream(dataStream: DataStream<Any?>): SingleOutputStreamOperator<Anomaly> {
+    override fun detectAnomalyStream(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         return strategy.apply(dataStream
                 .windowAll(window)
-                .aggregate(constraint.getAggregateFunction(dataStream.type, dataStream.executionConfig)))
+                .aggregate(constraint.getAggregateFunction(dataStream.type ,dataStream.executionConfig)))
     }
 
     override fun detectQualifiedStream(dataStream: DataStream<Any?>): SingleOutputStreamOperator<Any?> {

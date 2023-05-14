@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
 class RowAnomalyDetectorBuilder : AnomalyDetectorBuilder {
-    override fun build(): AnomalyDetector {
+    override fun build(): RowAnomalyDetector {
         TODO("Not yet implemented")
     }
 

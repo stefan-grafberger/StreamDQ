@@ -13,7 +13,7 @@ class AggregateAnomalyDetectorBuilder : AnomalyDetectorBuilder {
     private lateinit var constraint: AggregateConstraint
     private lateinit var strategy: AnomalyDetectionStrategy
 
-    override fun build(): AnomalyDetector {
+    override fun build(): AggregateAnomalyDetector {
         return AggregateAnomalyDetector(window, constraint, strategy)
     }
 
