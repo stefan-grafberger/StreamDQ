@@ -3,7 +3,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.model
 class Anomaly(
         val value: Double?,
         val confidence: Double,
-        val detail: String?
+        val detail: String? = null
 ) {
     fun canEqual(other: Any?): Boolean {
         return (other is Anomaly)

@@ -40,10 +40,11 @@ class OnlineNormalStrategy(
      * incremental value computation
      * For each value, a new mean and standard deviation get computed based on the previous
      * calculation. To calculate the standard deviation, a helper variable Sn is used.
+     * @searchInterval [a,b)
      */
-    private fun computeStatsAndAnomalies(
+    fun computeStatsAndAnomalies(
             cachedStream: List<Double>,
-            searchInterval: Pair<Int, Int>)
+            searchInterval: Pair<Int, Int> = Pair(0, cachedStream.size))
             : List<OnlineNormalResultDto> {
         val resultList = mutableListOf<OnlineNormalResultDto>()
         var currentMean = 0.0
@@ -95,10 +96,9 @@ class OnlineNormalStrategy(
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
 
         require(startInterval <= endInterval) { "The start of interval must be lower than the end." }
-        require(cachedStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
 
-        computeStatsAndAnomalies(cachedStream, searchInterval)
-                .slice(startInterval..endInterval)
+        computeStatsAndAnomalies(cachedStream)
+                .slice(startInterval until endInterval)
                 .forEachIndexed { index, result ->
                     if (result.isAnomaly) {
                         val upperBound = result.mean + (upperDeviationFactor
@@ -106,16 +106,16 @@ class OnlineNormalStrategy(
                         val lowerBound = result.mean - (lowerDeviationFactor
                                 ?: Double.MAX_VALUE) * result.stdDev
                         val detail = "[OnlineNormalStrategy]: data value ${cachedStream[index]} is not in [$lowerBound, $upperBound]"
-                        res.add(Pair(index, Anomaly(cachedStream[index], 1.0, detail)))
+                        res.add(Pair(index + startInterval, Anomaly(cachedStream[index + startInterval], 1.0, detail)))
                     }
                 }
         return res
     }
 
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
-        val cachedStreamList = dataStream.executeAndCollect(100)
+        val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, Pair(0, cachedStreamList.size))
+        val cachedAnomalyResult = detect(cachedStreamList)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
