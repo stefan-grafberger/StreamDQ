@@ -3,7 +3,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
-import org.apache.flink.streaming.api.datastream.*
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(

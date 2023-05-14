@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
 class AggregateAnomalyDetectorBuilder : AnomalyDetectorBuilder {
 
-    private lateinit var window : WindowAssigner<Any?, TimeWindow>
+    private lateinit var window: WindowAssigner<Any?, TimeWindow>
     private lateinit var constraint: AggregateConstraint
     private lateinit var strategy: AnomalyDetectionStrategy
 
