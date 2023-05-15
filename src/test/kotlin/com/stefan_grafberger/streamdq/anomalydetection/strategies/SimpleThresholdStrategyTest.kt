@@ -19,9 +19,10 @@ class SimpleThresholdStrategyTest {
     @Test
     fun testDetectWhenIntervalSpecifiedExpectAnomaliesDetected() {
         //given
-        val searchInterval = Pair(1, 3)
+        val searchInterval = Pair(0, 3)
         strategy = SimpleThresholdStrategy(lowerBound = Double.MIN_VALUE, upperBound = 1.0)
         val expected = mutableListOf(
+                Pair(0, Anomaly(-1.0, 1.0)),
                 Pair(1, Anomaly(2.0, 1.0)),
                 Pair(2, Anomaly(3.0, 1.0)))
         //when
