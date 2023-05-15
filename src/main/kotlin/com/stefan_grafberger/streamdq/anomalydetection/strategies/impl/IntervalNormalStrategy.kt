@@ -4,6 +4,7 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.nield.kotlinstatistics.standardDeviation
 
 class IntervalNormalStrategy(
@@ -62,6 +63,12 @@ class IntervalNormalStrategy(
     }
 
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
-        TODO("Not yet implemented")
+        val cachedStreamList = dataStream.executeAndCollect(1000)
+                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
+        val cachedAnomalyResult = detect(cachedStreamList)
+                .map { resultPair -> resultPair.second }
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
+                .createLocalEnvironment()
+        return env.fromCollection(cachedAnomalyResult)
     }
 }
