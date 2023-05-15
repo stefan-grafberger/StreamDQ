@@ -6,6 +6,7 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.nield.kotlinstatistics.standardDeviation
+import org.slf4j.LoggerFactory
 
 class IntervalNormalStrategy(
         private val lowerDeviationFactor: Double? = 3.0,
@@ -35,15 +36,15 @@ class IntervalNormalStrategy(
 
         val searchIntervalLength = endInterval - startInterval
 
-        require(includeInterval || searchIntervalLength > cachedStream.size) {
+        require(includeInterval || searchIntervalLength < cachedStream.size) {
             "Excluding values in searchInterval from calculation, but no more remaining values left to calculate mean/stdDev."
         }
 
         if (includeInterval) {
             mean = cachedStream.average(); stdDev = cachedStream.standardDeviation()
         } else {
-            val valuesBeforeInterval = cachedStream.slice(0..startInterval)
-            val valuesAfterInterval = cachedStream.slice(endInterval..cachedStream.size)
+            val valuesBeforeInterval = cachedStream.slice(0 until startInterval)
+            val valuesAfterInterval = cachedStream.slice(endInterval until cachedStream.size)
             val dataSeriesWithoutInterval = valuesBeforeInterval + valuesAfterInterval
             mean = dataSeriesWithoutInterval.average()
             stdDev = dataSeriesWithoutInterval.standardDeviation()
@@ -52,20 +53,36 @@ class IntervalNormalStrategy(
         val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
         val lowerBound = mean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
-        cachedStream.slice(startInterval..endInterval)
+        cachedStream.slice(startInterval until endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
                         val detail = "[IntervalNormalStrategy]: data value $value is not in [$lowerBound, $upperBound]"
-                        res.add(Pair(index, Anomaly(value, 1.0, detail)))
+                        res.add(Pair(index + startInterval, Anomaly(cachedStream[index + startInterval], 1.0, detail)))
                     }
                 }
         return res
     }
 
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+        val logger = LoggerFactory.getLogger(IntervalNormalStrategy::class.java)
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList)
+        try {
+            val cachedAnomalyResult = detect(cachedStreamList)
+                    .map { resultPair -> resultPair.second }
+            val env: StreamExecutionEnvironment = StreamExecutionEnvironment
+                    .createLocalEnvironment()
+            return env.fromCollection(cachedAnomalyResult)
+        } catch (e:IllegalArgumentException){
+            logger.error("For InterValNormalStrategy, either specify the interval or set the includeInterval to true ")
+            throw e
+        }
+    }
+
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+        val cachedStreamList = dataStream.executeAndCollect(1000)
+                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
+        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()

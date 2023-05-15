@@ -121,4 +121,14 @@ class OnlineNormalStrategy(
                 .createLocalEnvironment()
         return env.fromCollection(cachedAnomalyResult)
     }
+
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+        val cachedStreamList = dataStream.executeAndCollect(1000)
+                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
+        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
+                .map { resultPair -> resultPair.second }
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
+                .createLocalEnvironment()
+        return env.fromCollection(cachedAnomalyResult)
+    }
 }
