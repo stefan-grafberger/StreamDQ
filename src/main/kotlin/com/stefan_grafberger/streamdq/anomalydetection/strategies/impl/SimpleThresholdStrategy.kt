@@ -6,8 +6,8 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 
-abstract class SimpleThresholdStrategy(
-        private val lowerBound: Double,
+class SimpleThresholdStrategy(
+        private val lowerBound: Double = - Double.MAX_VALUE,
         private val upperBound: Double) : AnomalyDetectionStrategy {
 
     init {
@@ -25,11 +25,11 @@ abstract class SimpleThresholdStrategy(
         val (startInterval, endInterval) = searchInterval
         require(startInterval <= endInterval) { "The start of interval must be lower than the end" }
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
-        cachedStream.slice(startInterval..endInterval)
+        cachedStream.slice(startInterval until endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
                         val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
-                        res.add(Pair(index, Anomaly(value, 1.0, detail)))
+                        res.add(Pair(index+startInterval, Anomaly(value, 1.0, detail)))
                     }
                 }
         return res
@@ -39,6 +39,16 @@ abstract class SimpleThresholdStrategy(
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList)
+                .map { resultPair -> resultPair.second }
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
+                .createLocalEnvironment()
+        return env.fromCollection(cachedAnomalyResult)
+    }
+
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+        val cachedStreamList = dataStream.executeAndCollect(1000)
+                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
+        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
