@@ -21,7 +21,7 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("aggregate", 0.3, 0.5)
+        val constraint = CompletenessConstraint("aggregate")
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
