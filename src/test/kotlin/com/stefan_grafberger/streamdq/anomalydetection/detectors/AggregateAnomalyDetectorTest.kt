@@ -1,5 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
+import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectorBuilder
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetectorBuilder
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
@@ -13,11 +14,12 @@ import kotlin.test.assertEquals
 
 class AggregateAnomalyDetectorTest {
 
-    private var aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
+    private lateinit var aggregateAnomalyDetectorBuilder : AnomalyDetectorBuilder
 
     @Test
     fun testDetectAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
         //given
+        aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val constraint = CompletenessConstraint("aggregate", 0.3, 0.5)
         val detector = aggregateAnomalyDetectorBuilder
