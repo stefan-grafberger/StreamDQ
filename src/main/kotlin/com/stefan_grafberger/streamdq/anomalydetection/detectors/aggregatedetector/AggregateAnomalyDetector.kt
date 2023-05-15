@@ -5,6 +5,7 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
@@ -26,10 +27,16 @@ class AggregateAnomalyDetector(
         this.strategy = strategy
     }
 
-    override fun detectAnomalyStream(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun detectAnomalyStream(
+            dataStream: SingleOutputStreamOperator<AggregateConstraintResult>
+    ): SingleOutputStreamOperator<Anomaly> {
         return strategy.apply(dataStream
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
+                                .withTimestampAssigner { result, _ -> result.timestamp }
+                )
                 .windowAll(window)
-                .aggregate(constraint.getAggregateFunction(dataStream.type ,dataStream.executionConfig)))
+                .aggregate(constraint.getAggregateFunction(dataStream.type, dataStream.executionConfig)))
     }
 
     override fun detectQualifiedStream(dataStream: DataStream<Any?>): SingleOutputStreamOperator<Any?> {
