@@ -25,7 +25,8 @@ abstract class CheckResult<T : ConstraintResult> {
 data class AggregateConstraintResult(
     override var outcome: Boolean? = null,
     var aggregate: Double? = null,
-    override var constraintName: String? = null
+    override var constraintName: String? = null,
+    var timestamp: Long = 0
 ) : ConstraintResult()
 
 data class AggregateCheckResult<KEY>(
