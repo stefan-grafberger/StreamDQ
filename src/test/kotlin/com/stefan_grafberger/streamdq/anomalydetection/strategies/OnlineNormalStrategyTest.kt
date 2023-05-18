@@ -99,7 +99,6 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy()
         //when
         val lastDataPoint = strategy.computeStatsAndAnomalies(dataSeriesList).last()
-        println(lastDataPoint)
         //then
         assertEquals(1.071812328136762, lastDataPoint.value)
         assertEquals(0.06230422033200966, lastDataPoint.mean)

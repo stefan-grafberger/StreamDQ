@@ -38,7 +38,6 @@ class AggregateAnomalyDetectorTest {
         //when
         val actualAnomaly = detector.detectAnomalyStreamByCache(aggregateStream)
         //then
-        println(actualAnomaly.executeAndCollect().asSequence().toList().map { ele -> ele.value })
         assertEquals(expectedAnomalies, actualAnomaly.executeAndCollect().asSequence().toList())
     }
 
