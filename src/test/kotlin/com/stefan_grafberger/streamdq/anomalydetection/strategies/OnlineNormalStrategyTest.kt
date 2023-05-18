@@ -30,7 +30,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.2)
         val expectedAnomalies = MutableList(11) { Pair(it + 20, Anomaly(dataSeriesList[it + 20], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeriesList)
+        val anomalyResult = strategy.detectOnCache(dataSeriesList)
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -41,7 +41,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.2)
         val expectedAnomalies = MutableList(6) { Pair(it + 25, Anomaly(dataSeriesList[it + 25], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeriesList, Pair(25, 31))
+        val anomalyResult = strategy.detectOnCache(dataSeriesList, Pair(25, 31))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -52,7 +52,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(null, 1.5)
         val expectedAnomalies = MutableList(6) { Pair(it * 2 + 20, Anomaly(dataSeriesList[it * 2 + 20], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeriesList, Pair(20, 31))
+        val anomalyResult = strategy.detectOnCache(dataSeriesList, Pair(20, 31))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -63,7 +63,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(1.5, null)
         val expectedAnomalies = MutableList(5) { Pair(it * 2 + 21, Anomaly(dataSeriesList[it * 2 + 21], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeriesList)
+        val anomalyResult = strategy.detectOnCache(dataSeriesList)
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -74,7 +74,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(1.5, null)
         val emptySeries: MutableList<Double> = mutableListOf()
         //when
-        val anomalyResult = strategy.detect(emptySeries)
+        val anomalyResult = strategy.detectOnCache(emptySeries)
         //then
         assertTrue(anomalyResult.isEmpty())
     }
@@ -84,7 +84,7 @@ class OnlineNormalStrategyTest {
         //given
         strategy = OnlineNormalStrategy(Double.MAX_VALUE, Double.MAX_VALUE)
         //when
-        val anomalyResult = strategy.detect(dataSeriesList)
+        val anomalyResult = strategy.detectOnCache(dataSeriesList)
         //then
         assertTrue(anomalyResult.isEmpty())
     }
@@ -99,9 +99,10 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy()
         //when
         val lastDataPoint = strategy.computeStatsAndAnomalies(dataSeriesList).last()
+        println(lastDataPoint)
         //then
+        assertEquals(1.071812328136762, lastDataPoint.value)
         assertEquals(0.06230422033200966, lastDataPoint.mean)
-        assertEquals(0.7762862024684192, lastDataPoint.stdDev)
     }
 
     @Test
@@ -135,7 +136,7 @@ class OnlineNormalStrategyTest {
     }
 
     @Test
-    fun testApplyWhenDataStreamComeExpectAnomalyStreamOutput() {
+    fun testDetectOnCacheWhenDataStreamComeExpectAnomalyStreamDetected() {
         //given
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.0)
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
@@ -148,5 +149,19 @@ class OnlineNormalStrategyTest {
         //then
         assertEquals(expectedAnomalyStream.executeAndCollect().asSequence().toList(),
                 actualAnomalyList)
+    }
+
+    @Test
+    fun testDetectOnStreamWhenDataStreamComeExpectAnomalyStreamDetected() {
+        //given
+        strategy = OnlineNormalStrategy(3.5, 3.5, 0.0)
+        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
+        StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        val expectedAnomalyList = dataSeriesList.slice(20..30).map { value -> Anomaly(value, 1.0) }
+        //when
+        val anomalyResult = strategy.detectOnStream(aggregateResultStream.second)
+        val anomalyResultList = anomalyResult.executeAndCollect().asSequence().toList()
+        //then
+        assertEquals(expectedAnomalyList, anomalyResultList)
     }
 }

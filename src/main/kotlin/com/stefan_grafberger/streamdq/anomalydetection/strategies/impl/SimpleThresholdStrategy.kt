@@ -21,7 +21,7 @@ class SimpleThresholdStrategy(
      * @param searchInterval The value range between which anomalies to be detected [a,b].
      * @return A list of Pairs with the indexes of anomalies in the interval and their corresponding wrapper object.
      */
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detectOnCache(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
         val (startInterval, endInterval) = searchInterval
         require(startInterval <= endInterval) { "The start of interval must be lower than the end" }
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
@@ -35,10 +35,14 @@ class SimpleThresholdStrategy(
         return res
     }
 
+    override fun detectOnStream(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+        TODO("Not yet implemented")
+    }
+
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList)
+        val cachedAnomalyResult = detectOnCache(cachedStreamList)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
@@ -48,7 +52,7 @@ class SimpleThresholdStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
+        val cachedAnomalyResult = detectOnCache(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()

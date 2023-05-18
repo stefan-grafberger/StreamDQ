@@ -30,7 +30,7 @@ class IntervalNormalStrategyTest {
         strategy = IntervalNormalStrategy(1.0, 1.0)
         val expectedAnomalies = MutableList(6) { Pair(it + 25, Anomaly(dataSeries[it + 25], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeries, Pair(25, 50))
+        val anomalyResult = strategy.detectOnCache(dataSeries, Pair(25, 50))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -41,7 +41,7 @@ class IntervalNormalStrategyTest {
         strategy = IntervalNormalStrategy(null, 1.0)
         val expectedAnomalies = MutableList(6) { Pair(it * 2 + 20, Anomaly(dataSeries[it * 2 + 20], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeries, Pair(20, 31))
+        val anomalyResult = strategy.detectOnCache(dataSeries, Pair(20, 31))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -52,7 +52,7 @@ class IntervalNormalStrategyTest {
         strategy = IntervalNormalStrategy(1.0, null)
         val expectedAnomalies = MutableList(5) { Pair(it * 2 + 21, Anomaly(dataSeries[it * 2 + 21], 1.0)) }
         //when
-        val anomalyResult = strategy.detect(dataSeries, Pair(10, 30))
+        val anomalyResult = strategy.detectOnCache(dataSeries, Pair(10, 30))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -66,7 +66,7 @@ class IntervalNormalStrategyTest {
                 Pair(3, Anomaly(newDataSeries[3], 1.0)),
                 Pair(4, Anomaly(newDataSeries[3], 1.0)))
         //when
-        val anomalyResult = strategy.detect(newDataSeries, Pair(3, 5))
+        val anomalyResult = strategy.detectOnCache(newDataSeries, Pair(3, 5))
         //then
         assertEquals(expectedAnomalies, anomalyResult)
     }
@@ -79,7 +79,7 @@ class IntervalNormalStrategyTest {
         assertFailsWith(exceptionClass = IllegalArgumentException::class,
                 message = "Excluding values in searchInterval from calculation, but no more remaining values left to calculate mean/stdDev.",
                 //when
-                block = { val anomalyResult = strategy.detect(dataSeries) }
+                block = { val anomalyResult = strategy.detectOnCache(dataSeries) }
         )
     }
 
@@ -88,7 +88,7 @@ class IntervalNormalStrategyTest {
         //given
         strategy = IntervalNormalStrategy(Double.MAX_VALUE, Double.MAX_VALUE)
         //when
-        val anomalyResult = strategy.detect(dataSeries, Pair(30, 50))
+        val anomalyResult = strategy.detectOnCache(dataSeries, Pair(30, 50))
         //then
         assertTrue(anomalyResult.isEmpty())
     }

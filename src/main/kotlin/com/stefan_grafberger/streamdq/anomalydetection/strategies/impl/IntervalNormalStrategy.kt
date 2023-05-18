@@ -24,7 +24,11 @@ class IntervalNormalStrategy(
         ) { "Factors cannot be smaller than zero." }
     }
 
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detectOnStream(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+        TODO("Not yet implemented")
+    }
+
+    override fun detectOnCache(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
 
         val (startInterval, endInterval) = searchInterval
         val mean: Double
@@ -68,12 +72,12 @@ class IntervalNormalStrategy(
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         try {
-            val cachedAnomalyResult = detect(cachedStreamList)
+            val cachedAnomalyResult = detectOnCache(cachedStreamList)
                     .map { resultPair -> resultPair.second }
             val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                     .createLocalEnvironment()
             return env.fromCollection(cachedAnomalyResult)
-        } catch (e:IllegalArgumentException){
+        } catch (e: IllegalArgumentException) {
             logger.error("For InterValNormalStrategy, either specify the interval or set the includeInterval to true ")
             throw e
         }
@@ -82,7 +86,7 @@ class IntervalNormalStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
+        val cachedAnomalyResult = detectOnCache(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()

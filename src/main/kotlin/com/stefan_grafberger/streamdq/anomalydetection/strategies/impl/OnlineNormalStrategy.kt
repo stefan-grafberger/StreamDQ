@@ -3,9 +3,12 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.model.OnlineNormalResultDto
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.OnlineNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import kotlin.math.sqrt
 
 /**
@@ -77,7 +80,7 @@ class OnlineNormalStrategy(
             if (idx < numValuesToExclude ||
                     idx < searchStart ||
                     idx >= searchEnd || (currentValue in lowerBound..upperBound)) {
-                resultList.add(OnlineNormalResultDto(currentMean, stdDev, isAnomaly = false))
+                resultList.add(OnlineNormalResultDto(currentValue, currentMean, stdDev, isAnomaly = false))
             } else {
                 if (ignoreAnomalies) {
                     // Anomaly doesn't affect mean and variance
@@ -85,13 +88,13 @@ class OnlineNormalStrategy(
                     currentVariance = lastVariance
                     sn = lastSn
                 }
-                resultList.add(OnlineNormalResultDto(currentMean, stdDev, isAnomaly = true))
+                resultList.add(OnlineNormalResultDto(currentValue, currentMean, stdDev, isAnomaly = true))
             }
         }
         return resultList
     }
 
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detectOnCache(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
         val (startInterval, endInterval) = searchInterval
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
 
@@ -112,10 +115,22 @@ class OnlineNormalStrategy(
         return res
     }
 
+    override fun detectOnStream(
+            dataStream: SingleOutputStreamOperator<AggregateConstraintResult>)
+            : SingleOutputStreamOperator<Anomaly> {
+        return dataStream
+                .windowAll(GlobalWindows.create())
+                .trigger(CountTrigger.of(1))
+                .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
+                .filter { result -> result.isAnomaly }
+                .map { element -> Anomaly(element.value, 1.0, "[OnlineNormalStrategy]: data value") }
+                .returns(Anomaly::class.java)
+    }
+
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList)
+        val cachedAnomalyResult = detectOnCache(cachedStreamList)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
@@ -125,7 +140,7 @@ class OnlineNormalStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
+        val cachedAnomalyResult = detectOnCache(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
