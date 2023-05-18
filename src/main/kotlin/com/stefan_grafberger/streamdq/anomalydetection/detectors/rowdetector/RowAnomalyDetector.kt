@@ -11,6 +11,10 @@ class RowAnomalyDetector : AnomalyDetector {
         TODO("Not yet implemented")
     }
 
+    override fun detectAnomalyStreamByCache(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+        TODO("Not yet implemented")
+    }
+
     override fun detectQualifiedStream(dataStream: DataStream<Any?>): SingleOutputStreamOperator<Any?> {
         TODO("Not yet implemented")
     }

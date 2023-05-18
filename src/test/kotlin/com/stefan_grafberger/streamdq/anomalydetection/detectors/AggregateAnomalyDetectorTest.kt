@@ -14,10 +14,10 @@ import kotlin.test.assertEquals
 
 class AggregateAnomalyDetectorTest {
 
-    private lateinit var aggregateAnomalyDetectorBuilder : AnomalyDetectorBuilder
+    private lateinit var aggregateAnomalyDetectorBuilder: AnomalyDetectorBuilder
 
     @Test
-    fun testDetectAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
+    fun testDetectOnCacheAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
@@ -27,7 +27,32 @@ class AggregateAnomalyDetectorTest {
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(OnlineNormalStrategy(1.0, 1.0, 0.0))
                 .build()
-        // Expect 3rd and 4th time window has anomaly completeness value
+        val expectedAnomalies = mutableListOf(
+                Pair(2, Anomaly(0.0046, 1.0)),
+                Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
+        val aggregateStream = env.fromCollection(
+                rawStream.executeAndCollect()
+                        .asSequence()
+                        .toList()
+                        .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
+        //when
+        val actualAnomaly = detector.detectAnomalyStreamByCache(aggregateStream)
+        //then
+        println(actualAnomaly.executeAndCollect().asSequence().toList().map { ele -> ele.value })
+        assertEquals(expectedAnomalies, actualAnomaly.executeAndCollect().asSequence().toList())
+    }
+
+    @Test
+    fun testDetectOnStreamAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
+        //given
+        aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
+        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
+        val constraint = CompletenessConstraint("aggregate")
+        val detector = aggregateAnomalyDetectorBuilder
+                .withAggregatedConstraint(constraint)
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                .withStrategy(OnlineNormalStrategy(1.0, 1.0, 0.0))
+                .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, Anomaly(0.0046, 1.0)),
                 Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
