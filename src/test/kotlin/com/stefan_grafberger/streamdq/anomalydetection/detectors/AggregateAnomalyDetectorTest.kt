@@ -17,7 +17,7 @@ class AggregateAnomalyDetectorTest {
     private lateinit var aggregateAnomalyDetectorBuilder: AnomalyDetectorBuilder
 
     @Test
-    fun testDetectOnCacheAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
+    fun testDetectAnomalyStreamByCacheStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
@@ -36,13 +36,13 @@ class AggregateAnomalyDetectorTest {
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomaly = detector.detectAnomalyStreamByCache(aggregateStream)
+        val actualAnomalies = detector.detectAnomalyStreamByCache(aggregateStream)
         //then
-        assertEquals(expectedAnomalies, actualAnomaly.executeAndCollect().asSequence().toList())
+        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
 
     @Test
-    fun testDetectOnStreamAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
+    fun testDetectAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
@@ -61,8 +61,8 @@ class AggregateAnomalyDetectorTest {
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomaly = detector.detectAnomalyStream(aggregateStream)
+        val actualAnomalies = detector.detectAnomalyStream(aggregateStream)
         //then
-        assertEquals(expectedAnomalies, actualAnomaly.executeAndCollect().asSequence().toList())
+        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
 }
