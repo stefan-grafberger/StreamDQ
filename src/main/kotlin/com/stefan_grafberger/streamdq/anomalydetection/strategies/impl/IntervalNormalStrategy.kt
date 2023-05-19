@@ -24,11 +24,11 @@ class IntervalNormalStrategy(
         ) { "Factors cannot be smaller than zero." }
     }
 
-    override fun detectOnStream(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         TODO("Not yet implemented")
     }
 
-    override fun detectOnCache(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
 
         val (startInterval, endInterval) = searchInterval
         val mean: Double
@@ -72,7 +72,7 @@ class IntervalNormalStrategy(
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         try {
-            val cachedAnomalyResult = detectOnCache(cachedStreamList)
+            val cachedAnomalyResult = detect(cachedStreamList)
                     .map { resultPair -> resultPair.second }
             val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                     .createLocalEnvironment()
@@ -86,7 +86,7 @@ class IntervalNormalStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detectOnCache(cachedStreamList, searchInterval)
+        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()

@@ -26,7 +26,7 @@ class SimpleThresholdStrategyTest {
                 Pair(1, Anomaly(2.0, 1.0)),
                 Pair(2, Anomaly(3.0, 1.0)))
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeries, searchInterval)
+        val actualAnomalies = strategy.detect(dataSeries, searchInterval)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -39,7 +39,7 @@ class SimpleThresholdStrategyTest {
                 Pair(1, Anomaly(2.0, 1.0)),
                 Pair(2, Anomaly(3.0, 1.0)))
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeries)
+        val actualAnomalies = strategy.detect(dataSeries)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -50,7 +50,7 @@ class SimpleThresholdStrategyTest {
         val newDataSeries = mutableListOf<Double>()
         strategy = SimpleThresholdStrategy(upperBound = 1.0)
         //when
-        val actualAnomalies = strategy.detectOnCache(newDataSeries)
+        val actualAnomalies = strategy.detect(newDataSeries)
         //then
         assertTrue(actualAnomalies.isEmpty())
     }
@@ -64,7 +64,7 @@ class SimpleThresholdStrategyTest {
                 Pair(1, Anomaly(2.0, 1.0)),
                 Pair(2, Anomaly(3.0, 1.0)))
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeries)
+        val actualAnomalies = strategy.detect(dataSeries)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }

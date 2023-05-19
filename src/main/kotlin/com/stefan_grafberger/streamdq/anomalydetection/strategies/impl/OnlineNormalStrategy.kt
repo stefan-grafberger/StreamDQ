@@ -94,7 +94,7 @@ class OnlineNormalStrategy(
         return resultList
     }
 
-    override fun detectOnCache(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
         val (startInterval, endInterval) = searchInterval
         val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
 
@@ -115,7 +115,7 @@ class OnlineNormalStrategy(
         return res
     }
 
-    override fun detectOnStream(
+    override fun detect(
             dataStream: SingleOutputStreamOperator<AggregateConstraintResult>)
             : SingleOutputStreamOperator<Anomaly> {
         return dataStream
@@ -130,7 +130,7 @@ class OnlineNormalStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detectOnCache(cachedStreamList)
+        val cachedAnomalyResult = detect(cachedStreamList)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()
@@ -140,7 +140,7 @@ class OnlineNormalStrategy(
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detectOnCache(cachedStreamList, searchInterval)
+        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
                 .map { resultPair -> resultPair.second }
         val env: StreamExecutionEnvironment = StreamExecutionEnvironment
                 .createLocalEnvironment()

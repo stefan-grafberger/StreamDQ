@@ -30,7 +30,7 @@ class AggregateAnomalyDetector(
     override fun detectAnomalyStream(
             dataStream: SingleOutputStreamOperator<AggregateConstraintResult>
     ): SingleOutputStreamOperator<Anomaly> {
-        return strategy.detectOnStream(dataStream
+        return strategy.detect(dataStream
                 .assignTimestampsAndWatermarks(
                         WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
                                 .withTimestampAssigner { result, _ -> result.timestamp }

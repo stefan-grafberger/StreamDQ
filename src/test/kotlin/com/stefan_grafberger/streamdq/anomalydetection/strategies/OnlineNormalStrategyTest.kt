@@ -30,7 +30,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.2)
         val expectedAnomalies = MutableList(11) { Pair(it + 20, Anomaly(dataSeriesList[it + 20], 1.0)) }
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeriesList)
+        val actualAnomalies = strategy.detect(dataSeriesList)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -41,7 +41,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.2)
         val expectedAnomalies = MutableList(6) { Pair(it + 25, Anomaly(dataSeriesList[it + 25], 1.0)) }
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeriesList, Pair(25, 31))
+        val actualAnomalies = strategy.detect(dataSeriesList, Pair(25, 31))
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -52,7 +52,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(null, 1.5)
         val expectedAnomalies = MutableList(6) { Pair(it * 2 + 20, Anomaly(dataSeriesList[it * 2 + 20], 1.0)) }
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeriesList, Pair(20, 31))
+        val actualAnomalies = strategy.detect(dataSeriesList, Pair(20, 31))
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -63,7 +63,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(1.5, null)
         val expectedAnomalies = MutableList(5) { Pair(it * 2 + 21, Anomaly(dataSeriesList[it * 2 + 21], 1.0)) }
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeriesList)
+        val actualAnomalies = strategy.detect(dataSeriesList)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -74,7 +74,7 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(1.5, null)
         val emptySeries: MutableList<Double> = mutableListOf()
         //when
-        val actualAnomalies = strategy.detectOnCache(emptySeries)
+        val actualAnomalies = strategy.detect(emptySeries)
         //then
         assertTrue(actualAnomalies.isEmpty())
     }
@@ -84,7 +84,7 @@ class OnlineNormalStrategyTest {
         //given
         strategy = OnlineNormalStrategy(Double.MAX_VALUE, Double.MAX_VALUE)
         //when
-        val actualAnomalies = strategy.detectOnCache(dataSeriesList)
+        val actualAnomalies = strategy.detect(dataSeriesList)
         //then
         assertTrue(actualAnomalies.isEmpty())
     }
@@ -158,7 +158,7 @@ class OnlineNormalStrategyTest {
         StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val expectedAnomalies = dataSeriesList.slice(20..30).map { value -> Anomaly(value, 1.0) }
         //when
-        val actualAnomalyStream = strategy.detectOnStream(aggregateResultStream.second)
+        val actualAnomalyStream = strategy.detect(aggregateResultStream.second)
         val actualAnomalies = actualAnomalyStream.executeAndCollect().asSequence().toList()
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
