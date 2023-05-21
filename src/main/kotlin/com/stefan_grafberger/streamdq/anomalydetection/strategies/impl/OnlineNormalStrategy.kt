@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
-import com.stefan_grafberger.streamdq.anomalydetection.model.OnlineNormalResultDto
+import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResultDto
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.OnlineNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
@@ -48,8 +48,8 @@ class OnlineNormalStrategy(
     fun computeStatsAndAnomalies(
             cachedStream: List<Double>,
             searchInterval: Pair<Int, Int> = Pair(0, cachedStream.size))
-            : List<OnlineNormalResultDto> {
-        val resultList = mutableListOf<OnlineNormalResultDto>()
+            : List<NormalStrategyResultDto> {
+        val resultList = mutableListOf<NormalStrategyResultDto>()
         var currentMean = 0.0
         var currentVariance = 0.0
         var sn = 0.0
@@ -80,7 +80,7 @@ class OnlineNormalStrategy(
             if (idx < numValuesToExclude ||
                     idx < searchStart ||
                     idx >= searchEnd || (currentValue in lowerBound..upperBound)) {
-                resultList.add(OnlineNormalResultDto(currentValue, currentMean, stdDev, isAnomaly = false))
+                resultList.add(NormalStrategyResultDto(currentValue, currentMean, stdDev, isAnomaly = false))
             } else {
                 if (ignoreAnomalies) {
                     // Anomaly doesn't affect mean and variance
@@ -88,7 +88,7 @@ class OnlineNormalStrategy(
                     currentVariance = lastVariance
                     sn = lastSn
                 }
-                resultList.add(OnlineNormalResultDto(currentValue, currentMean, stdDev, isAnomaly = true))
+                resultList.add(NormalStrategyResultDto(currentValue, currentMean, stdDev, isAnomaly = true))
             }
         }
         return resultList
@@ -115,8 +115,8 @@ class OnlineNormalStrategy(
         return res
     }
 
-    override fun detect(
-            dataStream: SingleOutputStreamOperator<AggregateConstraintResult>)
+    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>,
+                        waterMarkInterval: Pair<Long, Long>?)
             : SingleOutputStreamOperator<Anomaly> {
         return dataStream
                 .windowAll(GlobalWindows.create())

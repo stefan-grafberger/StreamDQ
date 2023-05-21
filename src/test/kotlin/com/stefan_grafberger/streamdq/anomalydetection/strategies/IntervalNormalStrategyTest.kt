@@ -155,4 +155,38 @@ class IntervalNormalStrategyTest {
         assertEquals(expectedAnomalyStream.executeAndCollect().asSequence().toList(),
                 actualAnomalies)
     }
+
+    @Test
+    fun testDetectWhenIntervalIsIncludedExpectAnomalyStreamOutput() {
+        //given
+        strategy = IntervalNormalStrategy(1.0, 1.0, true)
+        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
+        val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        val expectedAnomalies = dataSeries.slice(20..30).map { value -> Anomaly(value, 1.0) }
+        val expectedAnomalyStream = environment.fromCollection(expectedAnomalies)
+        //when
+        val actualAnomalyStream = strategy.detect(aggregateResultStream.second)
+        val actualAnomalies = actualAnomalyStream.executeAndCollect().asSequence().toList()
+        //then
+        expectedAnomalyStream.executeAndCollect().asSequence().toList()
+        assertEquals(expectedAnomalyStream.executeAndCollect().asSequence().toList(),
+                actualAnomalies)
+    }
+
+    @Test
+    fun testDetectWhenIntervalIsSpecifiedExpectAnomalyStreamOutput() {
+        //given
+        strategy = IntervalNormalStrategy(1.0, 1.0)
+        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
+        val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        val expectedAnomalies = dataSeries.slice(25..30).map { value -> Anomaly(value, 1.0) }
+        val expectedAnomalyStream = environment.fromCollection(expectedAnomalies)
+        //when
+        val actualAnomalyStream = strategy.detect(aggregateResultStream.second, waterMarkInterval = Pair(1025L, 1040L))
+        val actualAnomalies = actualAnomalyStream.executeAndCollect().asSequence().toList()
+        //then
+        expectedAnomalyStream.executeAndCollect().asSequence().toList()
+        assertEquals(expectedAnomalyStream.executeAndCollect().asSequence().toList(),
+                actualAnomalies)
+    }
 }

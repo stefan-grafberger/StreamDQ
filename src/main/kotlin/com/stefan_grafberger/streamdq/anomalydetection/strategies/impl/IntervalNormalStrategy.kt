@@ -2,9 +2,12 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.IntervalNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.nield.kotlinstatistics.standardDeviation
 import org.slf4j.LoggerFactory
 
@@ -24,12 +27,48 @@ class IntervalNormalStrategy(
         ) { "Factors cannot be smaller than zero." }
     }
 
-    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
-        TODO("Not yet implemented")
+    /**
+     * by default, if waterMarkInterval is null,
+     * then equals to include Interval of all data
+     *
+     * currently it is not a good approach since I did not
+     * find a solution to calculate Anomaly by the mean
+     * and stdDEv of last element in the accumulator
+     * of aggregate function yet
+     */
+    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>,
+                        waterMarkInterval: Pair<Long, Long>?)
+            : SingleOutputStreamOperator<Anomaly> {
+        val baselineData = dataStream
+                .windowAll(GlobalWindows.create())
+                .trigger(CountTrigger.of(1))
+                .aggregate(IntervalNormalAggregate(lowerDeviationFactor, upperDeviationFactor, includeInterval, waterMarkInterval))
+                .executeAndCollect()
+                .asSequence()
+                .last()
+
+        val (mean, stdDev) = Pair(baselineData.mean, baselineData.stdDev)
+        val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
+        val lowerBound = mean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
+
+        return if (waterMarkInterval != null) {
+            val (startTimeStamp, endTimeStamp) = waterMarkInterval
+            dataStream
+                    .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
+                    .filter { data -> data.aggregate != null }
+                    .filter { data -> data.aggregate!! !in lowerBound..upperBound }
+                    .map { element -> Anomaly(element.aggregate, 1.0, "[IntervalNormalStrategy]: data value") }
+                    .returns(Anomaly::class.java)
+        } else {
+            dataStream
+                    .filter { data -> data.aggregate != null }
+                    .filter { data -> data.aggregate!! !in lowerBound..upperBound }
+                    .map { element -> Anomaly(element.aggregate, 1.0, "[IntervalNormalStrategy]: data value") }
+                    .returns(Anomaly::class.java)
+        }
     }
 
     override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
-
         val (startInterval, endInterval) = searchInterval
         val mean: Double
         val stdDev: Double

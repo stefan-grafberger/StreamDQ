@@ -35,7 +35,7 @@ class SimpleThresholdStrategy(
         return res
     }
 
-    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, waterMarkInterval: Pair<Long, Long>?): SingleOutputStreamOperator<Anomaly> {
         TODO("Not yet implemented")
     }
 

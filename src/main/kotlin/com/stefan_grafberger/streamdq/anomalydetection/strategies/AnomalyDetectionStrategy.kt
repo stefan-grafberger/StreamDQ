@@ -12,7 +12,8 @@ interface AnomalyDetectionStrategy {
                searchInterval: Pair<Int, Int> = Pair(0, cachedStream.size))
             : MutableCollection<Pair<Int, Anomaly>>
 
-    fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly>
+    fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>,
+               waterMarkInterval: Pair<Long, Long>?=null): SingleOutputStreamOperator<Anomaly>
 
     fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly>
 

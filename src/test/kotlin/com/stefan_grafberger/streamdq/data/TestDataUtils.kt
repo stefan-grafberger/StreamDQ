@@ -27,6 +27,11 @@ data class ClickInfo @JvmOverloads constructor(
         var nestedInfo: NestedClickInfo = NestedClickInfo()
 )
 
+data class NumberSeries @JvmOverloads constructor(
+        var value: Double = 0.0,
+        var timestamp: Long = 0L,
+)
+
 object TestDataUtils {
     fun createEnvAndGetClickStream(): Pair<StreamExecutionEnvironment, SingleOutputStreamOperator<ClickInfo>> {
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
@@ -1031,14 +1036,18 @@ object TestDataUtils {
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val randomNum = Random(1)
         val dataSeriesList = MutableList(50) { _ -> randomNum.asJavaRandom().nextGaussian() }
-
+        val startTime = 1000L
         for (i in 20..30) {
             dataSeriesList[i] = dataSeriesList[i] + i + (i % 2 * -2 * i)
         }
 
-        val aggregateConstraintResultList = MutableList(50) { index -> AggregateConstraintResult(true, dataSeriesList[index], "test") }
-        val aggregateResultStream = environment.fromCollection(aggregateConstraintResultList)
+        val dataSeriesWithTimeStamp = dataSeriesList
+                .mapIndexed { index, data -> NumberSeries(data, startTime + index) }
 
+        val aggregateConstraintResultList = MutableList(50) { index -> AggregateConstraintResult(true, dataSeriesWithTimeStamp[index].value, "test", dataSeriesWithTimeStamp[index].timestamp) }
+        val aggregateResultStream = environment.fromCollection(aggregateConstraintResultList)
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
+                        .withTimestampAssigner { res, _ -> res.timestamp })
         return Pair(environment, aggregateResultStream)
     }
 }
