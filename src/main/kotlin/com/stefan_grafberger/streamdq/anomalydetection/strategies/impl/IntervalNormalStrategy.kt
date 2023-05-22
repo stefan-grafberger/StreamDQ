@@ -1,12 +1,12 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.BoundMapFunction
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.IntervalNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.apache.flink.streaming.api.windowing.windows.Window
@@ -35,13 +35,13 @@ class IntervalNormalStrategy<W : Window>(
      * then equals to include Interval of all data
      *
      * currently it is not a good approach since I did not
-     * find a solution to calculate Anomaly by the mean
+     * find a solution to calculate AnomalyCheckResult by the mean
      * and stdDEv of last element in the accumulator
      * of aggregate function yet
      */
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>,
                         waterMarkInterval: Pair<Long, Long>?)
-            : SingleOutputStreamOperator<Anomaly> {
+            : SingleOutputStreamOperator<AnomalyCheckResult> {
         val baselineData = dataStream
                 .windowAll(strategyWindowAssigner)
                 .trigger(CountTrigger.of(1))
@@ -58,24 +58,24 @@ class IntervalNormalStrategy<W : Window>(
             val (startTimeStamp, endTimeStamp) = waterMarkInterval
             dataStream
                     .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
-                    .filter { data -> data.aggregate != null }
-                    .filter { data -> data.aggregate!! !in lowerBound..upperBound }
-                    .map { element -> Anomaly(element.aggregate, 1.0, "[IntervalNormalStrategy]: data value") }
-                    .returns(Anomaly::class.java)
+                    .map { data -> AnomalyCheckResult(data.aggregate, false, 1.0) }
+                    .returns(AnomalyCheckResult::class.java)
+                    .map(BoundMapFunction(lowerBound, upperBound))
+                    .returns(AnomalyCheckResult::class.java)
         } else {
             dataStream
-                    .filter { data -> data.aggregate != null }
-                    .filter { data -> data.aggregate!! !in lowerBound..upperBound }
-                    .map { element -> Anomaly(element.aggregate, 1.0, "[IntervalNormalStrategy]: data value") }
-                    .returns(Anomaly::class.java)
+                    .map { data -> AnomalyCheckResult(data.aggregate, false, 1.0) }
+                    .returns(AnomalyCheckResult::class.java)
+                    .map(BoundMapFunction(lowerBound, upperBound))
+                    .returns(AnomalyCheckResult::class.java)
         }
     }
 
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, AnomalyCheckResult>> {
         val (startInterval, endInterval) = searchInterval
         val mean: Double
         val stdDev: Double
-        val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
+        val res: MutableCollection<Pair<Int, AnomalyCheckResult>> = mutableListOf()
 
         require(startInterval <= endInterval) { "The start of interval must be lower than the end." }
         require(cachedStream.isNotEmpty()) { "Data stream is empty. Can't calculate mean/stdDev." }
@@ -102,14 +102,15 @@ class IntervalNormalStrategy<W : Window>(
         cachedStream.slice(startInterval until endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
-                        val detail = "[IntervalNormalStrategy]: data value $value is not in [$lowerBound, $upperBound]"
-                        res.add(Pair(index + startInterval, Anomaly(cachedStream[index + startInterval], 1.0, detail)))
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(cachedStream[index + startInterval], true, 1.0)))
+                    } else {
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(cachedStream[index + startInterval], false, 1.0)))
                     }
                 }
         return res
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val logger = LoggerFactory.getLogger(IntervalNormalStrategy::class.java)
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
@@ -125,7 +126,7 @@ class IntervalNormalStrategy<W : Window>(
         }
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList, searchInterval)

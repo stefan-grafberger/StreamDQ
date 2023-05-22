@@ -1,19 +1,15 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResultDto
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.OnlineNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
-import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.api.windowing.windows.Window
-import java.sql.Time
 import kotlin.math.sqrt
 
 /**
@@ -89,7 +85,7 @@ class OnlineNormalStrategy<W : Window>(
                 resultList.add(NormalStrategyResultDto(currentValue, currentMean, stdDev, isAnomaly = false))
             } else {
                 if (ignoreAnomalies) {
-                    // Anomaly doesn't affect mean and variance
+                    // AnomalyCheckResult doesn't affect mean and variance
                     currentMean = lastMean
                     currentVariance = lastVariance
                     sn = lastSn
@@ -100,9 +96,9 @@ class OnlineNormalStrategy<W : Window>(
         return resultList
     }
 
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, AnomalyCheckResult>> {
         val (startInterval, endInterval) = searchInterval
-        val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
+        val res: MutableCollection<Pair<Int, AnomalyCheckResult>> = mutableListOf()
 
         require(startInterval <= endInterval) { "The start of interval must be lower than the end." }
 
@@ -114,8 +110,9 @@ class OnlineNormalStrategy<W : Window>(
                                 ?: Double.MAX_VALUE) * result.stdDev
                         val lowerBound = result.mean - (lowerDeviationFactor
                                 ?: Double.MAX_VALUE) * result.stdDev
-                        val detail = "[OnlineNormalStrategy]: data value ${cachedStream[index]} is not in [$lowerBound, $upperBound]"
-                        res.add(Pair(index + startInterval, Anomaly(cachedStream[index + startInterval], 1.0, detail)))
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(cachedStream[index + startInterval], true, 1.0)))
+                    } else {
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(cachedStream[index + startInterval], false, 1.0)))
                     }
                 }
         return res
@@ -123,17 +120,16 @@ class OnlineNormalStrategy<W : Window>(
 
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>,
                         waterMarkInterval: Pair<Long, Long>?)
-            : SingleOutputStreamOperator<Anomaly> {
+            : SingleOutputStreamOperator<AnomalyCheckResult> {
         return dataStream
                 .windowAll(strategyWindowAssigner)
                 .trigger(CountTrigger.of(1))
                 .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
-                .filter { result -> result.isAnomaly }
-                .map { element -> Anomaly(element.value, 1.0, "[OnlineNormalStrategy]: data value") }
-                .returns(Anomaly::class.java)
+                .map { data -> AnomalyCheckResult(data.value, data.isAnomaly, 1.0) }
+                .returns(AnomalyCheckResult::class.java)
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList)
@@ -143,7 +139,7 @@ class OnlineNormalStrategy<W : Window>(
         return env.fromCollection(cachedAnomalyResult)
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList, searchInterval)

@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector
 
 import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetector
-import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
@@ -29,7 +29,7 @@ class AggregateAnomalyDetector(
 
     override fun detectAnomalyStream(
             dataStream: SingleOutputStreamOperator<AggregateConstraintResult>
-    ): SingleOutputStreamOperator<Anomaly> {
+    ): SingleOutputStreamOperator<AnomalyCheckResult> {
         return strategy.detect(dataStream
                 .assignTimestampsAndWatermarks(
                         WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
@@ -39,7 +39,7 @@ class AggregateAnomalyDetector(
                 .aggregate(constraint.getAggregateFunction(dataStream.type, dataStream.executionConfig)))
     }
 
-    override fun detectAnomalyStreamByCache(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun detectAnomalyStreamByCache(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         return strategy.apply(dataStream
                 .assignTimestampsAndWatermarks(
                         WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()

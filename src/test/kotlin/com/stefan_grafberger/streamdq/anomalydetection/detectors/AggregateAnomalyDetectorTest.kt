@@ -2,7 +2,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
 import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectorBuilder
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetectorBuilder
-import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
@@ -32,17 +32,21 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(2, Anomaly(0.0046, 1.0)),
-                Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
+                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
+                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
         val aggregateStream = env.fromCollection(
                 rawStream.executeAndCollect()
                         .asSequence()
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomalies = detector.detectAnomalyStreamByCache(aggregateStream)
+        val actualAnomalies = detector
+                .detectAnomalyStreamByCache(aggregateStream)
         //then
-        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
+        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect()
+                .asSequence()
+                .toList()
+                .filter{result -> result.isAnomaly == true })
     }
 
     @Test
@@ -57,15 +61,17 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(2, Anomaly(0.0046, 1.0)),
-                Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
+                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
+                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
         val aggregateStream = env.fromCollection(
                 rawStream.executeAndCollect()
                         .asSequence()
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomalies = detector.detectAnomalyStream(aggregateStream)
+        val actualAnomalies = detector
+                .detectAnomalyStream(aggregateStream)
+                .filter{result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
@@ -82,15 +88,17 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(IntervalNormalStrategy<GlobalWindow>(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(2, Anomaly(0.0046, 1.0)),
-                Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
+                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
+                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
         val aggregateStream = env.fromCollection(
                 rawStream.executeAndCollect()
                         .asSequence()
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomalies = detector.detectAnomalyStream(aggregateStream)
+        val actualAnomalies = detector
+                .detectAnomalyStream(aggregateStream)
+                .filter{result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
@@ -107,16 +115,18 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(1, Anomaly(0.25, 1.0)),
-                Pair(2, Anomaly(0.0046, 1.0)),
-                Pair(3, Anomaly(1.0, 1.0))).map { element -> element.second }
+                Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
+                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
+                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
         val aggregateStream = env.fromCollection(
                 rawStream.executeAndCollect()
                         .asSequence()
                         .toList()
                         .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
         //when
-        val actualAnomalies = detector.detectAnomalyStream(aggregateStream)
+        val actualAnomalies = detector
+                .detectAnomalyStream(aggregateStream)
+                .filter{result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }

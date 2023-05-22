@@ -58,7 +58,7 @@ class OnlineNormalAggregate(
         return if (currentValue in lowerBound..upperBound) {
             NormalStrategyResultDto(currentValue, acc.f1, stdDev, isAnomaly = false)
         } else {
-            // Anomaly won't affect mean and variance
+            // AnomalyCheckResult won't affect mean and variance
             acc.f1 = acc.f0
             acc.f3 = acc.f2
             acc.f5 = acc.f4

@@ -1,7 +1,8 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.BoundMapFunction
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -21,24 +22,24 @@ class SimpleThresholdStrategy(
      * @param searchInterval The value range between which anomalies to be detected [a,b].
      * @return A list of Pairs with the indexes of anomalies in the interval and their corresponding wrapper object.
      */
-    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, Anomaly>> {
+    override fun detect(cachedStream: List<Double>, searchInterval: Pair<Int, Int>): MutableCollection<Pair<Int, AnomalyCheckResult>> {
         val (startInterval, endInterval) = searchInterval
         require(startInterval <= endInterval) { "The start of interval must be lower than the end" }
-        val res: MutableCollection<Pair<Int, Anomaly>> = mutableListOf()
+        val res: MutableCollection<Pair<Int, AnomalyCheckResult>> = mutableListOf()
         cachedStream.slice(startInterval until endInterval)
                 .forEachIndexed { index, value ->
                     if (value < lowerBound || value > upperBound) {
-                        val detail = "[SimpleThresholdStrategy]: data value $value is not in [$lowerBound, $upperBound]}"
-                        res.add(Pair(index + startInterval, Anomaly(value, 1.0, detail)))
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(value, true, 1.0)))
+                    } else {
+                        res.add(Pair(index + startInterval, AnomalyCheckResult(value, false, 1.0)))
+
                     }
                 }
         return res
     }
 
-    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, waterMarkInterval: Pair<Long, Long>?): SingleOutputStreamOperator<Anomaly> {
-
+    override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, waterMarkInterval: Pair<Long, Long>?): SingleOutputStreamOperator<AnomalyCheckResult> {
         var (startTimeStamp, endTimeStamp) = Pair(Long.MIN_VALUE, Long.MAX_VALUE)
-        val (lower, upper) = Pair(lowerBound, upperBound)
 
         if (waterMarkInterval != null) {
             require(waterMarkInterval.first <= waterMarkInterval.second) {
@@ -50,16 +51,13 @@ class SimpleThresholdStrategy(
 
         return dataStream
                 .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
-                .filter { data -> data.aggregate != null }
-                .filter { data -> data.aggregate!! !in lower..upper }
-                .map { data ->
-                    Anomaly(data.aggregate, 1.0,
-                            "[SimpleThresholdStrategy]: data value ${data.aggregate} is not in [$lower, $upper]")
-                }
-                .returns(Anomaly::class.java)
+                .map { data -> AnomalyCheckResult(data.aggregate, false, confidence = 1.0) }
+                .returns(AnomalyCheckResult::class.java)
+                .map(BoundMapFunction(lowerBound, upperBound))
+                .returns(AnomalyCheckResult::class.java)
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList)
@@ -69,7 +67,7 @@ class SimpleThresholdStrategy(
         return env.fromCollection(cachedAnomalyResult)
     }
 
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<Anomaly> {
+    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val cachedStreamList = dataStream.executeAndCollect(1000)
                 .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
         val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
