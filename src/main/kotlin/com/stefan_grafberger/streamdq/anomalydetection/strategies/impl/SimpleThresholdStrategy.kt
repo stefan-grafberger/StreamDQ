@@ -36,7 +36,27 @@ class SimpleThresholdStrategy(
     }
 
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, waterMarkInterval: Pair<Long, Long>?): SingleOutputStreamOperator<Anomaly> {
-        TODO("Not yet implemented")
+
+        var (startTimeStamp, endTimeStamp) = Pair(Long.MIN_VALUE, Long.MAX_VALUE)
+        val (lower, upper) = Pair(lowerBound, upperBound)
+
+        if (waterMarkInterval != null) {
+            require(waterMarkInterval.first <= waterMarkInterval.second) {
+                "The start of interval must be not bigger than the end"
+            }
+            startTimeStamp = waterMarkInterval.first
+            endTimeStamp = waterMarkInterval.second
+        }
+
+        return dataStream
+                .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
+                .filter { data -> data.aggregate != null }
+                .filter { data -> data.aggregate!! !in lower..upper }
+                .map { data ->
+                    Anomaly(data.aggregate, 1.0,
+                            "[SimpleThresholdStrategy]: data value ${data.aggregate} is not in [$lower, $upper]")
+                }
+                .returns(Anomaly::class.java)
     }
 
     override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<Anomaly> {
