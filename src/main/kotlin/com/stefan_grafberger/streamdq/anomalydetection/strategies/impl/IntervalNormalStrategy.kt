@@ -7,14 +7,17 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
+import org.apache.flink.streaming.api.windowing.windows.Window
 import org.nield.kotlinstatistics.standardDeviation
 import org.slf4j.LoggerFactory
 
-class IntervalNormalStrategy(
+class IntervalNormalStrategy<W : Window>(
         private val lowerDeviationFactor: Double? = 3.0,
         private val upperDeviationFactor: Double? = 3.0,
-        private val includeInterval: Boolean = false
+        private val includeInterval: Boolean = false,
+        private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
 ) : AnomalyDetectionStrategy {
 
     init {
@@ -40,7 +43,7 @@ class IntervalNormalStrategy(
                         waterMarkInterval: Pair<Long, Long>?)
             : SingleOutputStreamOperator<Anomaly> {
         val baselineData = dataStream
-                .windowAll(GlobalWindows.create())
+                .windowAll(strategyWindowAssigner)
                 .trigger(CountTrigger.of(1))
                 .aggregate(IntervalNormalAggregate(lowerDeviationFactor, upperDeviationFactor, includeInterval, waterMarkInterval))
                 .executeAndCollect()

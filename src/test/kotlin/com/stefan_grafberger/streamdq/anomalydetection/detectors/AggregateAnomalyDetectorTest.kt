@@ -9,8 +9,10 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThr
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import com.stefan_grafberger.streamdq.checks.aggregate.CompletenessConstraint
 import com.stefan_grafberger.streamdq.data.TestDataUtils
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -27,7 +29,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(OnlineNormalStrategy(1.0, 1.0, 0.0))
+                .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, Anomaly(0.0046, 1.0)),
@@ -52,7 +54,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(OnlineNormalStrategy(1.0, 1.0, 0.0))
+                .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, Anomaly(0.0046, 1.0)),
@@ -77,7 +79,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(IntervalNormalStrategy(1.0, 1.0, true))
+                .withStrategy(IntervalNormalStrategy<GlobalWindow>(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, Anomaly(0.0046, 1.0)),

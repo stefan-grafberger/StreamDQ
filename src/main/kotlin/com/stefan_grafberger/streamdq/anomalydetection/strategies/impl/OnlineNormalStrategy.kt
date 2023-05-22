@@ -8,7 +8,12 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.api.windowing.windows.Window
+import java.sql.Time
 import kotlin.math.sqrt
 
 /**
@@ -25,11 +30,12 @@ import kotlin.math.sqrt
  * @param ignoreAnomalies       If set to true, ignores anomalous points in mean
  *                              and variance calculation.
  */
-class OnlineNormalStrategy(
+class OnlineNormalStrategy<W : Window>(
         private val lowerDeviationFactor: Double? = 3.0,
         private val upperDeviationFactor: Double? = 3.0,
         private val ignoreStartPercentage: Double = 0.1,
-        private val ignoreAnomalies: Boolean = true
+        private val ignoreAnomalies: Boolean = true,
+        private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
 ) : AnomalyDetectionStrategy {
 
     init {
@@ -119,7 +125,7 @@ class OnlineNormalStrategy(
                         waterMarkInterval: Pair<Long, Long>?)
             : SingleOutputStreamOperator<Anomaly> {
         return dataStream
-                .windowAll(GlobalWindows.create())
+                .windowAll(strategyWindowAssigner)
                 .trigger(CountTrigger.of(1))
                 .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
                 .filter { result -> result.isAnomaly }

@@ -5,6 +5,8 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 import kotlin.random.asJavaRandom
@@ -14,7 +16,7 @@ import kotlin.test.assertTrue
 
 
 class OnlineNormalStrategyTest {
-    private lateinit var strategy: OnlineNormalStrategy
+    private lateinit var strategy: OnlineNormalStrategy<GlobalWindow>
     private val randomNum = Random(1)
     private val dataSeriesList = MutableList(50) { _ -> randomNum.asJavaRandom().nextGaussian() }
 
@@ -153,7 +155,7 @@ class OnlineNormalStrategyTest {
     @Test
     fun testDetectOnStreamWhenDataStreamComeExpectAnomalyStreamDetected() {
         //given
-        strategy = OnlineNormalStrategy(3.5, 3.5, 0.0)
+        strategy = OnlineNormalStrategy(3.5, 3.5, 0.0, strategyWindowAssigner = GlobalWindows.create())
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
         StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val expectedAnomalies = dataSeriesList.slice(20..30).map { value -> Anomaly(value, 1.0) }

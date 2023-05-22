@@ -5,6 +5,8 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.Anomaly
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 import kotlin.random.asJavaRandom
@@ -14,7 +16,7 @@ import kotlin.test.assertTrue
 
 class IntervalNormalStrategyTest {
 
-    private lateinit var strategy: IntervalNormalStrategy
+    private lateinit var strategy: IntervalNormalStrategy<GlobalWindow>
     private val randomNum = Random(1)
     private val dataSeries = MutableList(50) { _ -> randomNum.asJavaRandom().nextGaussian() }
 
@@ -159,7 +161,7 @@ class IntervalNormalStrategyTest {
     @Test
     fun testDetectWhenIntervalIsIncludedExpectAnomalyStreamOutput() {
         //given
-        strategy = IntervalNormalStrategy(1.0, 1.0, true)
+        strategy = IntervalNormalStrategy(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create())
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val expectedAnomalies = dataSeries.slice(20..30).map { value -> Anomaly(value, 1.0) }
@@ -176,7 +178,7 @@ class IntervalNormalStrategyTest {
     @Test
     fun testDetectWhenIntervalIsSpecifiedExpectAnomalyStreamOutput() {
         //given
-        strategy = IntervalNormalStrategy(1.0, 1.0)
+        strategy = IntervalNormalStrategy(1.0, 1.0, strategyWindowAssigner = GlobalWindows.create())
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val expectedAnomalies = dataSeries.slice(25..30).map { value -> Anomaly(value, 1.0) }
