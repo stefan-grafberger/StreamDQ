@@ -1,8 +1,10 @@
 package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetector
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
+import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import org.apache.flink.api.common.ExecutionConfig
@@ -12,7 +14,8 @@ import org.apache.flink.streaming.api.datastream.KeyedStream
 data class VerificationResult<IN, KEY>(
         private val rowLevelCheckResults: Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>>,
         private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>>,
-        private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>
+        private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>,
+        private val anomalyDetectionsResults: Map<AnomalyDetector, DataStream<AnomalyCheckResult>>? = null
 ) {
 
     fun getResultsForCheck(check: InternalAggregateCheck): DataStream<AggregateCheckResult<KEY>>? {
@@ -21,6 +24,10 @@ data class VerificationResult<IN, KEY>(
 
     fun getResultsForCheck(check: RowLevelCheck): DataStream<RowLevelCheckResult<IN>>? { // Can we make this into a non-nullable object and throw an Exception when we can't retrieve the results for check?
         return rowLevelCheckResults[check]
+    }
+
+    fun getResultsForCheck(detector: AnomalyDetector): DataStream<AnomalyCheckResult>? {
+        return anomalyDetectionsResults?.get(detector)
     }
 }
 
@@ -38,6 +45,7 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
     var rowLevelChecks = mutableListOf<RowLevelCheck>()
     var aggChecks = mutableListOf<InternalAggregateCheck>()
     var anomalyChecks = mutableListOf<AnomalyDetector>()
+    var aggregateConstraints = mutableListOf<AggregateConstraint>()
 
     fun addRowLevelCheck(newRowLevelCheck: RowLevelCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
         rowLevelChecks.add(newRowLevelCheck)
@@ -67,6 +75,21 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
         return this
     }
 
+    fun addAnomalyChecks(newAnomalyCheck: Collection<AnomalyDetector>): VerificationPipelineBuilder<STYPE, IN, KEY> {
+        anomalyChecks.addAll(newAnomalyCheck)
+        return this
+    }
+
+    fun addAggregateConstraint(constraint: AggregateConstraint): VerificationPipelineBuilder<STYPE, IN, KEY> {
+        aggregateConstraints.add(constraint)
+        return this
+    }
+
+    fun addAggregateConstraints(constraint: Collection<AggregateConstraint>): VerificationPipelineBuilder<STYPE, IN, KEY> {
+        aggregateConstraints.addAll(constraint)
+        return this
+    }
+
     fun build(): VerificationResult<IN, *> {
         return when (stream) {
             is KeyedStream<*, *> -> {
@@ -80,7 +103,7 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as DataStream<IN>
                 AnalysisRunner()
-                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, aggregateConstraints, anomalyChecks, rowLevelChecks, aggChecks, config)
             }
 
             else -> {
