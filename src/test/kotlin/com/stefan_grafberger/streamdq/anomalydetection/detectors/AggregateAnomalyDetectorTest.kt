@@ -34,11 +34,9 @@ class AggregateAnomalyDetectorTest {
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = env.fromCollection(
-                rawStream.executeAndCollect()
-                        .asSequence()
-                        .toList()
-                        .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
+        val aggregateStream = rawStream
+                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
+                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
                 .detectAnomalyStreamByCache(aggregateStream)
@@ -46,7 +44,7 @@ class AggregateAnomalyDetectorTest {
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect()
                 .asSequence()
                 .toList()
-                .filter{result -> result.isAnomaly == true })
+                .filter { result -> result.isAnomaly == true })
     }
 
     @Test
@@ -63,15 +61,13 @@ class AggregateAnomalyDetectorTest {
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = env.fromCollection(
-                rawStream.executeAndCollect()
-                        .asSequence()
-                        .toList()
-                        .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
+        val aggregateStream = rawStream
+                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
+                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(aggregateStream)
-                .filter{result -> result.isAnomaly == true }
+                .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
@@ -90,15 +86,13 @@ class AggregateAnomalyDetectorTest {
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = env.fromCollection(
-                rawStream.executeAndCollect()
-                        .asSequence()
-                        .toList()
-                        .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
+        val aggregateStream = rawStream
+                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
+                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(aggregateStream)
-                .filter{result -> result.isAnomaly == true }
+                .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
@@ -118,15 +112,13 @@ class AggregateAnomalyDetectorTest {
                 Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = env.fromCollection(
-                rawStream.executeAndCollect()
-                        .asSequence()
-                        .toList()
-                        .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness", element.timestamp) })
+        val aggregateStream = rawStream
+                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
+                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(aggregateStream)
-                .filter{result -> result.isAnomaly == true }
+                .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
