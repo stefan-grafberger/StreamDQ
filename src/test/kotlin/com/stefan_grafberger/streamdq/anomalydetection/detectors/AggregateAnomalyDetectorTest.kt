@@ -2,7 +2,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metrics
+import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metric
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
@@ -24,9 +24,8 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("nestedInfo.nestedIntValue")
         val detector = aggregateAnomalyCheck
-                .withMetrics(Metrics.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
@@ -47,7 +46,7 @@ class AggregateAnomalyDetectorTest {
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val detector = aggregateAnomalyCheck
-                .withMetrics(Metrics.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(IntervalNormalStrategy<GlobalWindow>(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
@@ -67,9 +66,8 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("nestedInfo.nestedIntValue")
         val detector = aggregateAnomalyCheck
-                .withMetrics(Metrics.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
                 .build()

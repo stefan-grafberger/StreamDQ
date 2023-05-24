@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyCheck
-import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metrics
+import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metric
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import com.stefan_grafberger.streamdq.checks.aggregate.ApproxCountDistinctConstraint
@@ -14,10 +14,10 @@ class AggregateAnomalyCheck : AnomalyCheck {
 
     private lateinit var window: WindowAssigner<Any?, TimeWindow>
     private lateinit var strategy: AnomalyDetectionStrategy
-    private lateinit var metrics: AggregateConstraint
+    private lateinit var metric: AggregateConstraint
 
     override fun build(): AggregateAnomalyDetector {
-        return AggregateAnomalyDetector(window, metrics, strategy)
+        return AggregateAnomalyDetector(window, metric, strategy)
     }
 
     override fun withWindow(windowAssigner: WindowAssigner<Any?, TimeWindow>): AnomalyCheck {
@@ -25,15 +25,15 @@ class AggregateAnomalyCheck : AnomalyCheck {
         return this
     }
 
-    override fun withMetrics(metrics: Metrics, keyExpressionString: String): AnomalyCheck {
-        this.metrics = when (metrics) {
-            Metrics.COMPLETENESS ->
+    override fun withMetric(metric: Metric, keyExpressionString: String): AnomalyCheck {
+        this.metric = when (metric) {
+            Metric.COMPLETENESS ->
                 CompletenessConstraint(keyExpressionString)
 
-            Metrics.APPROX_UNIQUENESS ->
+            Metric.APPROX_UNIQUENESS ->
                 ApproxUniquenessConstraint(keyExpressionString)
 
-            Metrics.APPROX_COUNT_DISTINCT ->
+            Metric.APPROX_COUNT_DISTINCT ->
                 ApproxCountDistinctConstraint(keyExpressionString)
         }
         return this
