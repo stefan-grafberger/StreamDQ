@@ -5,6 +5,7 @@ import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
@@ -26,7 +27,7 @@ class AggregateAnomalyDetector(
     }
 
     override fun <IN> detectAnomalyStream(
-            dataStream: SingleOutputStreamOperator<IN>
+            dataStream: DataStream<IN>
     ): SingleOutputStreamOperator<AnomalyCheckResult> {
         return strategy.detect(dataStream
                 .windowAll(window)
