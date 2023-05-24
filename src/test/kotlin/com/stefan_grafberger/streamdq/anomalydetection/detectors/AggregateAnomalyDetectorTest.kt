@@ -24,7 +24,7 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("aggregate")
+        val constraint = CompletenessConstraint("nestedInfo.nestedIntValue")
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
@@ -33,12 +33,9 @@ class AggregateAnomalyDetectorTest {
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = rawStream
-                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
-                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
-                .detectAnomalyStream(aggregateStream)
+                .detectAnomalyStream(rawStream)
                 .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
@@ -49,7 +46,7 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("aggregate")
+        val constraint = CompletenessConstraint("nestedInfo.nestedIntValue")
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
@@ -58,12 +55,9 @@ class AggregateAnomalyDetectorTest {
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = rawStream
-                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
-                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
-                .detectAnomalyStream(aggregateStream)
+                .detectAnomalyStream(rawStream)
                 .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
@@ -74,7 +68,7 @@ class AggregateAnomalyDetectorTest {
         //given
         aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("aggregate")
+        val constraint = CompletenessConstraint("nestedInfo.nestedIntValue")
         val detector = aggregateAnomalyDetectorBuilder
                 .withAggregatedConstraint(constraint)
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
@@ -84,12 +78,9 @@ class AggregateAnomalyDetectorTest {
                 Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
                 Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = rawStream
-                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
-                .returns(AggregateConstraintResult::class.java)
         //when
         val actualAnomalies = detector
-                .detectAnomalyStream(aggregateStream)
+                .detectAnomalyStream(rawStream)
                 .filter { result -> result.isAnomaly == true }
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())

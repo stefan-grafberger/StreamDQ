@@ -25,8 +25,8 @@ class AggregateAnomalyDetector(
         this.strategy = strategy
     }
 
-    override fun detectAnomalyStream(
-            dataStream: SingleOutputStreamOperator<AggregateConstraintResult>
+    override fun <IN> detectAnomalyStream(
+            dataStream: SingleOutputStreamOperator<IN>
     ): SingleOutputStreamOperator<AnomalyCheckResult> {
         return strategy.detect(dataStream
                 .windowAll(window)
