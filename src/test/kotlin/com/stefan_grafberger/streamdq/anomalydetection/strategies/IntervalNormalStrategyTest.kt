@@ -130,44 +130,6 @@ class IntervalNormalStrategyTest {
         )
     }
 
-    /**
-     * Can not pass search interval for now
-     */
-    @Test
-    fun testDetectOnCacheWhenDataStreamComeExpectAnomalyStreamOutput() {
-        //given
-        strategy = IntervalNormalStrategy(1.0, 1.0, true)
-        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
-        val expectedAnomalies = dataSeries.slice(20..30).map { value -> AnomalyCheckResult(value, true, 1.0) }
-        //when
-        val actualAnomalyStream = strategy.apply(aggregateResultStream.second)
-        val actualAnomalies = actualAnomalyStream.executeAndCollect()
-                .asSequence()
-                .toList()
-                .filter { result -> result.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies,
-                actualAnomalies)
-    }
-
-    @Test
-    fun testDetectOnCacheWhenDataStreamComeWithSpecifiedIntervalExpectAnomalyStreamOutput() {
-        //given
-        strategy = IntervalNormalStrategy(1.0, 1.0, true)
-        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
-        val expectedAnomalies = dataSeries.slice(25..30).map { value -> AnomalyCheckResult(value, true, 1.0) }
-        val userDefinedSearchInterval = Pair(25, 50)
-        //when
-        val actualAnomalyStream = strategy.apply(aggregateResultStream.second, userDefinedSearchInterval)
-        val actualAnomalies = actualAnomalyStream.executeAndCollect()
-                .asSequence()
-                .toList()
-                .filter { result -> result.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies,
-                actualAnomalies)
-    }
-
     @Test
     fun testDetectWhenIntervalIsIncludedExpectAnomalyStreamOutput() {
         //given

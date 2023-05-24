@@ -6,12 +6,10 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.B
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.IntervalNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.apache.flink.streaming.api.windowing.windows.Window
 import org.nield.kotlinstatistics.standardDeviation
-import org.slf4j.LoggerFactory
 
 class IntervalNormalStrategy<W : Window>(
         private val lowerDeviationFactor: Double? = 3.0,
@@ -108,31 +106,5 @@ class IntervalNormalStrategy<W : Window>(
                     }
                 }
         return res
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val logger = LoggerFactory.getLogger(IntervalNormalStrategy::class.java)
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        try {
-            val cachedAnomalyResult = detect(cachedStreamList)
-                    .map { resultPair -> resultPair.second }
-            val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                    .createLocalEnvironment()
-            return env.fromCollection(cachedAnomalyResult)
-        } catch (e: IllegalArgumentException) {
-            logger.error("For InterValNormalStrategy, either specify the interval or set the includeInterval to true ")
-            throw e
-        }
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
-                .map { resultPair -> resultPair.second }
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                .createLocalEnvironment()
-        return env.fromCollection(cachedAnomalyResult)
     }
 }

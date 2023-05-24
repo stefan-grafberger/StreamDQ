@@ -1,6 +1,5 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
-import com.stefan_grafberger.streamdq.anomalydetection.AnomalyDetectorBuilder
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetectorBuilder
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
@@ -19,33 +18,6 @@ import kotlin.test.assertEquals
 class AggregateAnomalyDetectorTest {
 
     private lateinit var aggregateAnomalyDetectorBuilder: AnomalyDetectorBuilder
-
-    @Test
-    fun testDetectAnomalyStreamByCacheStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
-        //given
-        aggregateAnomalyDetectorBuilder = AggregateAnomalyDetectorBuilder()
-        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val constraint = CompletenessConstraint("aggregate")
-        val detector = aggregateAnomalyDetectorBuilder
-                .withAggregatedConstraint(constraint)
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0))
-                .build()
-        val expectedAnomalies = mutableListOf(
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val aggregateStream = rawStream
-                .map { element -> AggregateConstraintResult(true, element.nestedInfo.nestedIntValue?.toDouble(), "completeness") }
-                .returns(AggregateConstraintResult::class.java)
-        //when
-        val actualAnomalies = detector
-                .detectAnomalyStreamByCache(aggregateStream)
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect()
-                .asSequence()
-                .toList()
-                .filter { result -> result.isAnomaly == true })
-    }
 
     @Test
     fun testDetectAnomalyStreamWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {

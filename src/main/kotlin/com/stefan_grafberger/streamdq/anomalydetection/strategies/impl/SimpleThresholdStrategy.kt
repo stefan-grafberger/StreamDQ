@@ -5,7 +5,6 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetecti
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.BoundMapFunction
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 
 class SimpleThresholdStrategy(
         private val lowerBound: Double = -Double.MAX_VALUE,
@@ -55,25 +54,5 @@ class SimpleThresholdStrategy(
                 .returns(AnomalyCheckResult::class.java)
                 .map(BoundMapFunction(lowerBound, upperBound))
                 .returns(AnomalyCheckResult::class.java)
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList)
-                .map { resultPair -> resultPair.second }
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                .createLocalEnvironment()
-        return env.fromCollection(cachedAnomalyResult)
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
-                .map { resultPair -> resultPair.second }
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                .createLocalEnvironment()
-        return env.fromCollection(cachedAnomalyResult)
     }
 }

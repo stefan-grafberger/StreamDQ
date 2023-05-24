@@ -86,28 +86,6 @@ class SimpleThresholdStrategyTest {
     }
 
     @Test
-    fun testApplyWhenDataStreamComeExpectAnomalyStreamOutput() {
-        //given
-        val randomNum = Random(1)
-        val newDataSeries = MutableList(50) { _ -> randomNum.asJavaRandom().nextGaussian() }
-        for (i in 20..30) {
-            newDataSeries[i] = newDataSeries[i] + i + (i % 2 * -2 * i)
-        }
-        strategy = SimpleThresholdStrategy(upperBound = 1.0)
-        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
-        val expectedAnomalies = newDataSeries.filter { value -> value > 1.0 }.map { value -> AnomalyCheckResult(value, true, 1.0) }
-        //when
-        val actualAnomalyStream = strategy.apply(aggregateResultStream.second)
-        val actualAnomalies = actualAnomalyStream.executeAndCollect()
-                .asSequence()
-                .toList()
-                .filter { result -> result.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies,
-                actualAnomalies)
-    }
-
-    @Test
     fun testDetectWhenDataStreamComeExpectAnomalyStreamOutput() {
         //given
         val randomNum = Random(1)

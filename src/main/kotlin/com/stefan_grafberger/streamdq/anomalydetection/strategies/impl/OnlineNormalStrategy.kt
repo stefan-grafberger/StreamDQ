@@ -6,7 +6,6 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetecti
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions.OnlineNormalAggregate
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.apache.flink.streaming.api.windowing.windows.Window
@@ -127,25 +126,5 @@ class OnlineNormalStrategy<W : Window>(
                 .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
                 .map { data -> AnomalyCheckResult(data.value, data.isAnomaly, 1.0) }
                 .returns(AnomalyCheckResult::class.java)
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList)
-                .map { resultPair -> resultPair.second }
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                .createLocalEnvironment()
-        return env.fromCollection(cachedAnomalyResult)
-    }
-
-    override fun apply(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>, searchInterval: Pair<Int, Int>): SingleOutputStreamOperator<AnomalyCheckResult> {
-        val cachedStreamList = dataStream.executeAndCollect(1000)
-                .mapNotNull { aggregateConstraintResult -> aggregateConstraintResult.aggregate }
-        val cachedAnomalyResult = detect(cachedStreamList, searchInterval)
-                .map { resultPair -> resultPair.second }
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment
-                .createLocalEnvironment()
-        return env.fromCollection(cachedAnomalyResult)
     }
 }

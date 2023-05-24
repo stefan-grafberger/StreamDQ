@@ -149,25 +149,6 @@ class OnlineNormalStrategyTest {
     }
 
     @Test
-    fun testDetectOnCacheWhenDataStreamComeExpectAnomalyStreamDetected() {
-        //given
-        strategy = OnlineNormalStrategy(3.5, 3.5, 0.0)
-        val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
-        StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
-        val expectedAnomalies = dataSeriesList.slice(20..30).map { value -> AnomalyCheckResult(value, true, 1.0) }
-        //when
-        val actualAnomalyStream = strategy
-                .apply(aggregateResultStream.second)
-        val actualAnomalies = actualAnomalyStream
-                .executeAndCollect()
-                .asSequence()
-                .toList()
-                .filter { result -> result.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies)
-    }
-
-    @Test
     fun testDetectOnStreamWhenDataStreamComeExpectAnomalyStreamDetected() {
         //given
         strategy = OnlineNormalStrategy(3.5, 3.5, 0.0, strategyWindowAssigner = GlobalWindows.create())
