@@ -2,10 +2,10 @@ package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metrics
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
-import com.stefan_grafberger.streamdq.checks.aggregate.CompletenessConstraint
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import com.stefan_grafberger.streamdq.data.ClickType
 import com.stefan_grafberger.streamdq.data.TestDataUtils
@@ -111,12 +111,12 @@ class VerificationSuiteTest {
         //given
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val aggregateAnomalyCheckBySimpleThresholdStrategy = AggregateAnomalyCheck()
-                .withAggregatedConstraint(CompletenessConstraint("nestedInfo.nestedIntValue"))
+                .withMetrics(Metrics.COMPLETENESS, "nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
                 .build()
         val aggregateAnomalyCheckByOnlineNormalStrategy = AggregateAnomalyCheck()
-                .withAggregatedConstraint(CompletenessConstraint("nestedInfo.nestedIntValue"))
+                .withMetrics(Metrics.COMPLETENESS, "nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
                 .build()

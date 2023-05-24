@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResultDto
+import com.stefan_grafberger.streamdq.anomalydetection.model.dto.NormalStrategyResultDto
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple3
