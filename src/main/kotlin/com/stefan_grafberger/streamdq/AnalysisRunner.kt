@@ -4,7 +4,6 @@ import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
-import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.MapFunctionsWrapper
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
@@ -16,7 +15,6 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.KeyedStream
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 
 class AnalysisRunner {
 
@@ -48,7 +46,6 @@ class AnalysisRunner {
 
     fun <IN> addChecksToStream(
             stream: DataStream<IN>,
-            aggregateConstraints: MutableList<AggregateConstraint>,
             anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
             rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
             continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
@@ -70,10 +67,7 @@ class AnalysisRunner {
 
         val anomalyDetectionsResultMap = buildAndAddAnomalyDetectionResultStreams(
                 stream,
-                streamObjectTypeInfo,
-                aggregateConstraints,
-                anomalyDetectionsWithPotentialDuplicates,
-                config
+                anomalyDetectionsWithPotentialDuplicates
         )
 
         return VerificationResult(
@@ -186,38 +180,16 @@ class AnalysisRunner {
         return rowLevelResultMap
     }
 
-    /**
-     * require firstly apply aggregate constraints functions on the stream,
-     * then anomaly detection can be applied
-     */
     private fun <IN> buildAndAddAnomalyDetectionResultStreams(
             baseStream: DataStream<IN>,
-            streamObjectTypeInfo: TypeInformation<IN>,
-            constraints: MutableList<AggregateConstraint>,
-            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
-            config: ExecutionConfig?
+            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>
     ): Map<AnomalyDetector, DataStream<AnomalyCheckResult>> {
         val anomalyDetectionsResultMap: MutableMap<AnomalyDetector, DataStream<AnomalyCheckResult>> = mutableMapOf()
         val uniqueAnomalyDetections = anomalyDetectionsWithPotentialDuplicates.distinct()
-
-        require(constraints.size == uniqueAnomalyDetections.size) {
-            "anomaly detections must have the same length as constraints, " +
-                    "since we want to do anomaly detection based on aggregate " +
-                    "constraint result of aggregate constraints"
-        }
-
-        val constraintsToDetectorMap: Map<AggregateConstraint, AnomalyDetector> = constraints
-                .zip(uniqueAnomalyDetections)
-                .toMap()
-
-        for ((constraint, detector) in constraintsToDetectorMap) {
-            val aggregateFunction = constraint.getAggregateFunction(streamObjectTypeInfo, config)
-            val resultStream = detector.detectAnomalyStream(baseStream
-                    .windowAll(GlobalWindows.create())
-                    .aggregate(aggregateFunction))
+        for (detector in uniqueAnomalyDetections) {
+            val resultStream = detector.detectAnomalyStream(baseStream)
             anomalyDetectionsResultMap[detector] = resultStream
         }
-
         return anomalyDetectionsResultMap
     }
 }

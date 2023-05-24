@@ -4,7 +4,6 @@ import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
-import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import org.apache.flink.api.common.ExecutionConfig
@@ -45,7 +44,6 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
     var rowLevelChecks = mutableListOf<RowLevelCheck>()
     var aggChecks = mutableListOf<InternalAggregateCheck>()
     var anomalyChecks = mutableListOf<AnomalyDetector>()
-    var aggregateConstraints = mutableListOf<AggregateConstraint>()
 
     fun addRowLevelCheck(newRowLevelCheck: RowLevelCheck): VerificationPipelineBuilder<STYPE, IN, KEY> {
         rowLevelChecks.add(newRowLevelCheck)
@@ -67,9 +65,6 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
         return this
     }
 
-    /**
-     * able to add only one anomaly checks
-     */
     fun addAnomalyCheck(newAnomalyCheck: AnomalyDetector): VerificationPipelineBuilder<STYPE, IN, KEY> {
         anomalyChecks.add(newAnomalyCheck)
         return this
@@ -77,16 +72,6 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
 
     fun addAnomalyChecks(newAnomalyCheck: Collection<AnomalyDetector>): VerificationPipelineBuilder<STYPE, IN, KEY> {
         anomalyChecks.addAll(newAnomalyCheck)
-        return this
-    }
-
-    fun addAggregateConstraint(constraint: AggregateConstraint): VerificationPipelineBuilder<STYPE, IN, KEY> {
-        aggregateConstraints.add(constraint)
-        return this
-    }
-
-    fun addAggregateConstraints(constraint: Collection<AggregateConstraint>): VerificationPipelineBuilder<STYPE, IN, KEY> {
-        aggregateConstraints.addAll(constraint)
         return this
     }
 
@@ -103,7 +88,7 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as DataStream<IN>
                 AnalysisRunner()
-                        .addChecksToStream(typedStream, aggregateConstraints, anomalyChecks, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, anomalyChecks, rowLevelChecks, aggChecks, config)
             }
 
             else -> {

@@ -1,9 +1,17 @@
 package com.stefan_grafberger.streamdq
 
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetectorBuilder
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetectorBuilder
+import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
+import com.stefan_grafberger.streamdq.checks.aggregate.CompletenessConstraint
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
+import com.stefan_grafberger.streamdq.data.ClickInfo
 import com.stefan_grafberger.streamdq.data.ClickType
 import com.stefan_grafberger.streamdq.data.TestDataUtils
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
@@ -12,9 +20,12 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import java.math.BigDecimal
 import java.util.regex.Pattern
+import kotlin.test.assertEquals
 
 @TestInstance(Lifecycle.PER_CLASS)
 class VerificationSuiteTest {
+
+    private lateinit var verificationSuite: VerificationSuite
 
     @Test
     fun `test multiple checks keyed`() {
@@ -96,5 +107,39 @@ class VerificationSuiteTest {
         firstContinuousResults.forEach { aggregateCheckResult ->
             println("Distinct Items: ${aggregateCheckResult.constraintResults!![2]}")
         }
+    }
+
+    @Test
+    fun testGetResultsForCheckWhenAddAnomalyChecksExpectAnomaliesDetected(){
+        //given
+        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
+        val anomalyCheck = AggregateAnomalyDetectorBuilder()
+                .withAggregatedConstraint(CompletenessConstraint("nestedInfo.nestedIntValue"))
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
+                .build()
+        val expectedAnomalies = mutableListOf(
+                Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
+                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
+                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
+        val expectedNoneAnomalies = mutableListOf(
+                Pair(0, AnomalyCheckResult(0.3333, false, 1.0))).map { element -> element.second }
+        //when
+        val verificationResult = VerificationSuite()
+                .onDataStream(rawStream, env.config)
+                .addAnomalyCheck(anomalyCheck)
+                .build()
+        val actualAnomalyCheckResult = verificationResult.getResultsForCheck(anomalyCheck)
+        val actualAnomalies = actualAnomalyCheckResult?.filter { result -> result.isAnomaly == true }
+                ?.executeAndCollect()
+                ?.asSequence()
+                ?.toList()
+        val actualNoneAnomalies = actualAnomalyCheckResult?.filter { result -> result.isAnomaly == false }
+                ?.executeAndCollect()
+                ?.asSequence()
+                ?.toList()
+        //then
+        assertEquals(expectedAnomalies, actualAnomalies)
+        assertEquals(expectedNoneAnomalies, actualNoneAnomalies)
     }
 }
