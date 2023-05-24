@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq
 
-import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetectorBuilder
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
@@ -23,8 +23,6 @@ import kotlin.test.assertEquals
 
 @TestInstance(Lifecycle.PER_CLASS)
 class VerificationSuiteTest {
-
-    private lateinit var verificationSuite: VerificationSuite
 
     @Test
     fun `test multiple checks keyed`() {
@@ -112,12 +110,12 @@ class VerificationSuiteTest {
     fun testGetResultsForCheckWhenAddAnomalyChecksExpectAnomaliesDetected() {
         //given
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val anomalyCheckBySimpleThresholdStrategy = AggregateAnomalyDetectorBuilder()
+        val aggregateAnomalyCheckBySimpleThresholdStrategy = AggregateAnomalyCheck()
                 .withAggregatedConstraint(CompletenessConstraint("nestedInfo.nestedIntValue"))
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
                 .build()
-        val anomalyCheckByOnlineNormalStrategy = AggregateAnomalyDetectorBuilder()
+        val aggregateAnomalyCheckByOnlineNormalStrategy = AggregateAnomalyCheck()
                 .withAggregatedConstraint(CompletenessConstraint("nestedInfo.nestedIntValue"))
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
@@ -137,10 +135,10 @@ class VerificationSuiteTest {
         //when
         val verificationResult = VerificationSuite()
                 .onDataStream(rawStream, env.config)
-                .addAnomalyChecks(mutableListOf(anomalyCheckBySimpleThresholdStrategy, anomalyCheckByOnlineNormalStrategy))
+                .addAnomalyChecks(mutableListOf(aggregateAnomalyCheckBySimpleThresholdStrategy, aggregateAnomalyCheckByOnlineNormalStrategy))
                 .build()
-        val actualAnomalyCheckResultBySimpleThresholdStrategy = verificationResult.getResultsForCheck(anomalyCheckBySimpleThresholdStrategy)
-        val actualAnomalyCheckResultByOnlineNormalStrategy = verificationResult.getResultsForCheck(anomalyCheckByOnlineNormalStrategy)
+        val actualAnomalyCheckResultBySimpleThresholdStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckBySimpleThresholdStrategy)
+        val actualAnomalyCheckResultByOnlineNormalStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByOnlineNormalStrategy)
         val actualAnomaliesBySimpleThresholdStrategy = actualAnomalyCheckResultBySimpleThresholdStrategy?.filter { result -> result.isAnomaly == true }
                 ?.executeAndCollect()
                 ?.asSequence()

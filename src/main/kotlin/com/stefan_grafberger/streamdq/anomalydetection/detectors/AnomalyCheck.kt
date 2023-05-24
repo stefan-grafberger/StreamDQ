@@ -5,9 +5,9 @@ import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
-interface AnomalyDetectorBuilder {
+interface AnomalyCheck {
     fun build(): AnomalyDetector
-    fun withWindow(windowAssigner: WindowAssigner<Any?, TimeWindow>): AnomalyDetectorBuilder
-    fun withAggregatedConstraint(constraint: AggregateConstraint): AnomalyDetectorBuilder
-    fun withStrategy(strategy: AnomalyDetectionStrategy): AnomalyDetectorBuilder
+    fun withWindow(windowAssigner: WindowAssigner<Any?, TimeWindow>): AnomalyCheck
+    fun withAggregatedConstraint(constraint: AggregateConstraint): AnomalyCheck
+    fun withStrategy(strategy: AnomalyDetectionStrategy): AnomalyCheck
 }
