@@ -25,7 +25,7 @@ class AggregateAnomalyDetectorTest {
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val detector = aggregateAnomalyCheck
-                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
@@ -46,7 +46,7 @@ class AggregateAnomalyDetectorTest {
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val detector = aggregateAnomalyCheck
-                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(IntervalNormalStrategy<GlobalWindow>(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create()))
                 .build()
@@ -67,7 +67,7 @@ class AggregateAnomalyDetectorTest {
         aggregateAnomalyCheck = AggregateAnomalyCheck()
         val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
         val detector = aggregateAnomalyCheck
-                .withMetric(Metric.COMPLETENESS, "nestedInfo.nestedIntValue")
+                .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
                 .build()

@@ -1,12 +1,8 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyCheck
-import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metric
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
-import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
-import com.stefan_grafberger.streamdq.checks.aggregate.ApproxCountDistinctConstraint
-import com.stefan_grafberger.streamdq.checks.aggregate.ApproxUniquenessConstraint
-import com.stefan_grafberger.streamdq.checks.aggregate.CompletenessConstraint
+import com.stefan_grafberger.streamdq.checks.aggregate.*
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
@@ -25,17 +21,23 @@ class AggregateAnomalyCheck : AnomalyCheck {
         return this
     }
 
-    override fun withMetric(metric: Metric, keyExpressionString: String): AnomalyCheck {
-        this.metric = when (metric) {
-            Metric.COMPLETENESS ->
-                CompletenessConstraint(keyExpressionString)
+    override fun onCompleteness(keyExpressionString: String): AnomalyCheck {
+        this.metric = CompletenessConstraint(keyExpressionString)
+        return this
+    }
 
-            Metric.APPROX_UNIQUENESS ->
-                ApproxUniquenessConstraint(keyExpressionString)
+    override fun onApproxUniqueness(keyExpressionString: String): AnomalyCheck {
+        this.metric = ApproxUniquenessConstraint(keyExpressionString)
+        return this
+    }
 
-            Metric.APPROX_COUNT_DISTINCT ->
-                ApproxCountDistinctConstraint(keyExpressionString)
-        }
+    override fun onApproxCountDistinct(keyExpressionString: String): AnomalyCheck {
+        this.metric = ApproxCountDistinctConstraint(keyExpressionString)
+        return this
+    }
+
+    override fun onApproxQuantileConstraint(keyExpressionString: String, quantile: Double): AnomalyCheck {
+        this.metric = ApproxQuantileConstraint(keyExpressionString, quantile)
         return this
     }
 

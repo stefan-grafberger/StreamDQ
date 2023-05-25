@@ -7,7 +7,10 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
 interface AnomalyCheck {
     fun build(): AnomalyDetector
+    fun onCompleteness(keyExpressionString: String) : AnomalyCheck
+    fun onApproxUniqueness(keyExpressionString: String) : AnomalyCheck
+    fun onApproxCountDistinct(keyExpressionString: String): AnomalyCheck
+    fun onApproxQuantileConstraint(keyExpressionString: String, quantile: Double): AnomalyCheck
     fun withWindow(windowAssigner: WindowAssigner<Any?, TimeWindow>): AnomalyCheck
-    fun withMetric(metric: Metric, keyExpressionString: String): AnomalyCheck
     fun withStrategy(strategy: AnomalyDetectionStrategy): AnomalyCheck
 }
