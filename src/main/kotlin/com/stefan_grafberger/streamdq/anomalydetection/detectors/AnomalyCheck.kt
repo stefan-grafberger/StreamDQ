@@ -9,7 +9,7 @@ interface AnomalyCheck {
     fun onCompleteness(keyExpressionString: String): AnomalyCheck
     fun onApproxUniqueness(keyExpressionString: String): AnomalyCheck
     fun onApproxCountDistinct(keyExpressionString: String): AnomalyCheck
-    fun onApproxQuantileConstraint(keyExpressionString: String, quantile: Double): AnomalyCheck
+    fun onApproxQuantile(keyExpressionString: String, quantile: Double): AnomalyCheck
     fun withWindow(windowAssigner: WindowAssigner<Any?, TimeWindow>): AnomalyCheck
     fun withStrategy(strategy: AnomalyDetectionStrategy): AnomalyCheck
 }

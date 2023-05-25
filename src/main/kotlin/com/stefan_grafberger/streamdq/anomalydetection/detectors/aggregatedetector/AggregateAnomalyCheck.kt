@@ -36,7 +36,7 @@ class AggregateAnomalyCheck : AnomalyCheck {
         return this
     }
 
-    override fun onApproxQuantileConstraint(keyExpressionString: String, quantile: Double): AnomalyCheck {
+    override fun onApproxQuantile(keyExpressionString: String, quantile: Double): AnomalyCheck {
         this.metric = ApproxQuantileConstraint(keyExpressionString, quantile)
         return this
     }
