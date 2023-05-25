@@ -2,7 +2,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies;
 
 import com.stefan_grafberger.streamdq.TestUtils
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.onlinenormalstrategy.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows

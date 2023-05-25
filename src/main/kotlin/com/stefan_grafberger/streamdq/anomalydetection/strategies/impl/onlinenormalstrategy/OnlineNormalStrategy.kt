@@ -1,4 +1,4 @@
-package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
+package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.onlinenormalstrategy
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.model.dto.NormalStrategyResultDto

@@ -2,8 +2,8 @@ package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.onlinenormalstrategy.OnlineNormalStrategyBuilder
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.thresholdstrategy.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import com.stefan_grafberger.streamdq.data.ClickType
@@ -117,7 +117,10 @@ class VerificationSuiteTest {
         val aggregateAnomalyCheckByOnlineNormalStrategy = AggregateAnomalyCheck()
                 .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
+                .withStrategy(OnlineNormalStrategyBuilder<GlobalWindow>()
+                        .withWindow(GlobalWindows.create())
+                        .withArguments(1.0, 1.0, 0.0)
+                        .build())
                 .build()
         val expectedAnomaliesBySimpleThresholdStrategy = mutableListOf(
                 Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
