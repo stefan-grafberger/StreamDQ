@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.thresholdstrategy.SimpleThresholdStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

@@ -2,14 +2,10 @@ package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.Intervalnormalstrategy.IntervalNormalStrategy
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.onlinenormalstrategy.OnlineNormalStrategy
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.thresholdstrategy.SimpleThresholdStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
 import com.stefan_grafberger.streamdq.data.TestDataUtils
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -25,7 +21,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyCheck
                 .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(OnlineNormalStrategy<GlobalWindow>(1.0, 1.0, 0.0, strategyWindowAssigner = GlobalWindows.create()))
+                .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0, 0.0))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
@@ -46,7 +42,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyCheck
                 .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(IntervalNormalStrategy<GlobalWindow>(1.0, 1.0, true, strategyWindowAssigner = GlobalWindows.create()))
+                .withStrategy(DetectionStrategy().intervalNormal(1.0, 1.0, true))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
@@ -67,7 +63,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyCheck
                 .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(SimpleThresholdStrategy(lowerBound = 0.26, upperBound = 0.9))
+                .withStrategy(DetectionStrategy().threshold(0.26, 0.9))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(1, AnomalyCheckResult(0.25, true, 1.0)),

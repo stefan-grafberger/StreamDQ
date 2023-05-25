@@ -1,4 +1,4 @@
-package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.thresholdstrategy
+package com.stefan_grafberger.streamdq.anomalydetection.strategies.impl
 
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
