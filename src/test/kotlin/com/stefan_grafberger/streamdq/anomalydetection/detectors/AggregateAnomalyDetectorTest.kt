@@ -2,11 +2,9 @@ package com.stefan_grafberger.streamdq.anomalydetection.detectors
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.model.metrics.Metric
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.IntervalNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
-import com.stefan_grafberger.streamdq.checks.aggregate.CompletenessConstraint
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
