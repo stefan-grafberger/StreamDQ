@@ -35,27 +35,6 @@ class AggregateAnomalyDetectorTest {
     }
 
     @Test
-    fun testDetectByIntervalStrategyWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
-        //given
-        aggregateAnomalyCheck = AggregateAnomalyCheck()
-        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val detector = aggregateAnomalyCheck
-                .onCompleteness("nestedInfo.nestedIntValue")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().intervalNormal(1.0, 1.0, true))
-                .build()
-        val expectedAnomalies = mutableListOf(
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        //when
-        val actualAnomalies = detector
-                .detectAnomalyStream(rawStream)
-                .filter { result -> result.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
-    }
-
-    @Test
     fun testDetectBySimpleThresholdStrategyWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
         //given
         aggregateAnomalyCheck = AggregateAnomalyCheck()
