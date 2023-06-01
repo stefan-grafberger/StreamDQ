@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple4
 
 class RelativeRateOfChangeAggregate(
-        private val maxRateDecrease: Double = Double.MAX_VALUE,
+        private val maxRateDecrease: Double = -Double.MAX_VALUE,
         private val maxRateIncrease: Double = Double.MAX_VALUE,
         private val order: Int = 1
 ) : AggregateFunction<AggregateConstraintResult,
