@@ -1,5 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies
 
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.AbsoluteChangeStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
@@ -30,5 +31,20 @@ class DetectionStrategy {
 
     fun threshold(lowerBound: Double = -Double.MAX_VALUE, upperBound: Double): SimpleThresholdStrategy {
         return SimpleThresholdStrategy(lowerBound, upperBound)
+    }
+
+    fun absoluteChange(maxRateDecrease: Double = -Double.MIN_VALUE,
+                       maxRateIncrease: Double = Double.MAX_VALUE,
+                       order: Int = 1): AbsoluteChangeStrategy<GlobalWindow> {
+        return AbsoluteChangeStrategy(maxRateDecrease, maxRateIncrease, order,
+                GlobalWindows.create())
+    }
+
+    fun <W : Window> absoluteChangeWithCustomWindow(maxRateDecrease: Double = -Double.MIN_VALUE,
+                                                    maxRateIncrease: Double = Double.MAX_VALUE,
+                                                    order: Int = 1,
+                                                    strategyWindowAssigner: WindowAssigner<Any?, W>?): AbsoluteChangeStrategy<W> {
+        return AbsoluteChangeStrategy(maxRateDecrease, maxRateIncrease, order,
+                strategyWindowAssigner)
     }
 }

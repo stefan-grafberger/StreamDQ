@@ -1050,4 +1050,56 @@ object TestDataUtils {
                         .withTimestampAssigner { res, _ -> res.timestamp })
         return Pair(environment, aggregateResultStream)
     }
+
+    fun createEnvAndGetAggregateResultForAbsolute(): Pair<StreamExecutionEnvironment, SingleOutputStreamOperator<AggregateConstraintResult>> {
+        val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        val dataSeriesList = MutableList(51) { 0.0 }
+        val startTime = 1000L
+        for (i in 0..50) {
+            if (i in 20..30) {
+                if (i % 2 == 0) {
+                    dataSeriesList[i] = i.toDouble()
+                } else {
+                    dataSeriesList[i] = -i.toDouble()
+                }
+            } else {
+                dataSeriesList[i] = 1.0
+            }
+        }
+
+        val dataSeriesWithTimeStamp = dataSeriesList
+                .mapIndexed { index, data -> NumberSeries(data, startTime + index) }
+
+        val aggregateConstraintResultList = MutableList(51) { index -> AggregateConstraintResult(true, dataSeriesWithTimeStamp[index].value, "test", dataSeriesWithTimeStamp[index].timestamp) }
+        val aggregateResultStream = environment.fromCollection(aggregateConstraintResultList)
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
+                        .withTimestampAssigner { res, _ -> res.timestamp })
+        return Pair(environment, aggregateResultStream)
+    }
+
+    fun createEnvAndGetShortAggregateResultForAbsolute(): Pair<StreamExecutionEnvironment, SingleOutputStreamOperator<AggregateConstraintResult>> {
+        val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        val dataSeriesList = MutableList(11) { 0.0 }
+        val startTime = 1000L
+        for (i in 0..10) {
+            if (i in 2..5) {
+                if (i % 2 == 0) {
+                    dataSeriesList[i] = i.toDouble() * 10
+                } else {
+                    dataSeriesList[i] = -i.toDouble() * 10
+                }
+            } else {
+                dataSeriesList[i] = 1.0
+            }
+        }
+
+        val dataSeriesWithTimeStamp = dataSeriesList
+                .mapIndexed { index, data -> NumberSeries(data, startTime + index) }
+
+        val aggregateConstraintResultList = MutableList(11) { index -> AggregateConstraintResult(true, dataSeriesWithTimeStamp[index].value, "test", dataSeriesWithTimeStamp[index].timestamp) }
+        val aggregateResultStream = environment.fromCollection(aggregateConstraintResultList)
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forMonotonousTimestamps<AggregateConstraintResult>()
+                        .withTimestampAssigner { res, _ -> res.timestamp })
+        return Pair(environment, aggregateResultStream)
+    }
 }
