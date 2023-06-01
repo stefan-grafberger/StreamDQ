@@ -2,6 +2,7 @@ package com.stefan_grafberger.streamdq.anomalydetection.strategies
 
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.AbsoluteChangeStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.RelativeRateOfChangeStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
@@ -40,11 +41,26 @@ class DetectionStrategy {
                 GlobalWindows.create())
     }
 
-    fun <W : Window> absoluteChangeWithCustomWindow(maxRateDecrease: Double = -Double.MIN_VALUE,
+    fun <W : Window> absoluteChangeWithCustomWindow(maxRateDecrease: Double = -Double.MAX_VALUE,
                                                     maxRateIncrease: Double = Double.MAX_VALUE,
                                                     order: Int = 1,
                                                     strategyWindowAssigner: WindowAssigner<Any?, W>?): AbsoluteChangeStrategy<W> {
         return AbsoluteChangeStrategy(maxRateDecrease, maxRateIncrease, order,
+                strategyWindowAssigner)
+    }
+
+    fun relativeRateOfChange(maxRateDecrease: Double = -Double.MAX_VALUE,
+                             maxRateIncrease: Double = Double.MAX_VALUE,
+                             order: Int = 1): RelativeRateOfChangeStrategy<GlobalWindow> {
+        return RelativeRateOfChangeStrategy(maxRateDecrease, maxRateIncrease, order,
+                GlobalWindows.create())
+    }
+
+    fun <W : Window> relativeRateOfChangeWithCustomWindow(maxRateDecrease: Double = -Double.MAX_VALUE,
+                                                          maxRateIncrease: Double = Double.MAX_VALUE,
+                                                          order: Int = 1,
+                                                          strategyWindowAssigner: WindowAssigner<Any?, W>?): RelativeRateOfChangeStrategy<W> {
+        return RelativeRateOfChangeStrategy(maxRateDecrease, maxRateIncrease, order,
                 strategyWindowAssigner)
     }
 }

@@ -116,6 +116,16 @@ class VerificationSuiteTest {
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0, 0.0))
                 .build()
+        val aggregateAnomalyCheckByAbsoluteChangeStrategy = AggregateAnomalyCheck()
+                .onCompleteness("nestedInfo.nestedIntValue")
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                .withStrategy(DetectionStrategy().absoluteChange(-0.1, 0.9, 1))
+                .build()
+        val aggregateAnomalyCheckByRelativeRateOfChangeStrategy = AggregateAnomalyCheck()
+                .onCompleteness("nestedInfo.nestedIntValue")
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                .withStrategy(DetectionStrategy().relativeRateOfChange(0.02, 3.0, 2))
+                .build()
         val expectedAnomaliesBySimpleThresholdStrategy = mutableListOf(
                 Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
@@ -128,13 +138,29 @@ class VerificationSuiteTest {
         val expectedNoneAnomaliesByOnlineNormalStrategy = mutableListOf(
                 Pair(0, AnomalyCheckResult(0.3333, false, 1.0)),
                 Pair(1, AnomalyCheckResult(0.25, false, 1.0))).map { element -> element.second }
+        val expectedAnomalyCheckResultByAbsoluteChangeStrategy = mutableListOf(
+                AnomalyCheckResult(0.3333, false, 1.0),
+                AnomalyCheckResult(0.25, false, 1.0),
+                AnomalyCheckResult(0.0046, true, 1.0),
+                AnomalyCheckResult(1.0, true, 1.0))
+        val expectedAnomalyCheckResultByRelativeRateOfChangeChangeStrategy = mutableListOf(
+                AnomalyCheckResult(0.3333, false, 1.0),
+                AnomalyCheckResult(0.25, false, 1.0),
+                AnomalyCheckResult(0.0046, true, 1.0),
+                AnomalyCheckResult(1.0, true, 1.0))
         //when
         val verificationResult = VerificationSuite()
                 .onDataStream(rawStream, env.config)
-                .addAnomalyChecks(mutableListOf(aggregateAnomalyCheckBySimpleThresholdStrategy, aggregateAnomalyCheckByOnlineNormalStrategy))
+                .addAnomalyChecks(mutableListOf(
+                        aggregateAnomalyCheckBySimpleThresholdStrategy,
+                        aggregateAnomalyCheckByOnlineNormalStrategy,
+                        aggregateAnomalyCheckByAbsoluteChangeStrategy,
+                        aggregateAnomalyCheckByRelativeRateOfChangeStrategy))
                 .build()
         val actualAnomalyCheckResultBySimpleThresholdStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckBySimpleThresholdStrategy)
         val actualAnomalyCheckResultByOnlineNormalStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByOnlineNormalStrategy)
+        val actualAnomalyCheckResultByAbsoluteChangeStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByAbsoluteChangeStrategy)
+        val actualAnomalyCheckResultByRelativeRateOfChangeStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByRelativeRateOfChangeStrategy)
         val actualAnomaliesBySimpleThresholdStrategy = actualAnomalyCheckResultBySimpleThresholdStrategy?.filter { result -> result.isAnomaly == true }
                 ?.executeAndCollect()
                 ?.asSequence()
@@ -151,10 +177,20 @@ class VerificationSuiteTest {
                 ?.executeAndCollect()
                 ?.asSequence()
                 ?.toList()
+        val actualAnomaliesByAbsoluteChangeStrategy = actualAnomalyCheckResultByAbsoluteChangeStrategy
+                ?.executeAndCollect()
+                ?.asSequence()
+                ?.toList()
+        val actualAnomaliesByRelativeRateOfChangeStrategy = actualAnomalyCheckResultByRelativeRateOfChangeStrategy
+                ?.executeAndCollect()
+                ?.asSequence()
+                ?.toList()
         //then
         assertEquals(expectedAnomaliesBySimpleThresholdStrategy, actualAnomaliesBySimpleThresholdStrategy)
         assertEquals(expectedNoneAnomaliesBySimpleThresholdStrategy, actualNoneAnomaliesBySimpleThresholdStrategy)
         assertEquals(expectedAnomaliesByOnlineNormalStrategy, actualAnomaliesByOnlineNormalStrategy)
         assertEquals(expectedNoneAnomaliesByOnlineNormalStrategy, actualNoneAnomaliesByOnlineNormalStrategy)
+        assertEquals(expectedAnomalyCheckResultByAbsoluteChangeStrategy, actualAnomaliesByAbsoluteChangeStrategy)
+        assertEquals(expectedAnomalyCheckResultByRelativeRateOfChangeChangeStrategy, actualAnomaliesByRelativeRateOfChangeStrategy)
     }
 }

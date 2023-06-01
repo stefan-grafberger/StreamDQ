@@ -75,4 +75,24 @@ class AggregateAnomalyDetectorTest {
         //then
         assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
     }
+
+    @Test
+    fun testDetectByRelativeRateOfChangeChangeStrategyWhenAbnormalClickStreamComeExpectAnomalyStreamDetected() {
+        //given
+        aggregateAnomalyCheck = AggregateAnomalyCheck()
+        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
+        val detector = aggregateAnomalyCheck
+                .onCompleteness("nestedInfo.nestedIntValue")
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                .withStrategy(DetectionStrategy().relativeRateOfChange(0.02, 3.0, 2))
+                .build()
+        val expectedAnomalies = mutableListOf(AnomalyCheckResult(0.0046, true, 1.0),
+                AnomalyCheckResult(1.0, true, 1.0))
+        //when
+        val actualAnomalies = detector
+                .detectAnomalyStream(rawStream)
+                .filter { result -> result.isAnomaly == true }
+        //then
+        assertEquals(expectedAnomalies, actualAnomalies.executeAndCollect().asSequence().toList())
+    }
 }
