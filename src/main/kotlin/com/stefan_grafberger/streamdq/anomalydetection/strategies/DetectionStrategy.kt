@@ -33,7 +33,7 @@ class DetectionStrategy {
         return SimpleThresholdStrategy(lowerBound, upperBound)
     }
 
-    fun absoluteChange(maxRateDecrease: Double = -Double.MIN_VALUE,
+    fun absoluteChange(maxRateDecrease: Double = -Double.MAX_VALUE,
                        maxRateIncrease: Double = Double.MAX_VALUE,
                        order: Int = 1): AbsoluteChangeStrategy<GlobalWindow> {
         return AbsoluteChangeStrategy(maxRateDecrease, maxRateIncrease, order,

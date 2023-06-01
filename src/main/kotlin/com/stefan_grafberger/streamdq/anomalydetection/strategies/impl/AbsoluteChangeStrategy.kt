@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
 import org.apache.flink.streaming.api.windowing.windows.Window
 
 class AbsoluteChangeStrategy<W : Window>(
-        private val maxRateDecrease: Double = -Double.MIN_VALUE,
+        private val maxRateDecrease: Double = -Double.MAX_VALUE,
         private val maxRateIncrease: Double = Double.MAX_VALUE,
         private val order: Int = 1,
         private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null) : AnomalyDetectionStrategy {

@@ -11,7 +11,7 @@ import org.apache.flink.api.java.tuple.Tuple4
  * the first order elements will be none anomaly since we can not determine
  */
 class AbsoluteChangeAggregate(
-        private val maxRateDecrease: Double = -Double.MIN_VALUE,
+        private val maxRateDecrease: Double = -Double.MAX_VALUE,
         private val maxRateIncrease: Double = Double.MAX_VALUE,
         private val order: Int = 1
 ) : AggregateFunction<AggregateConstraintResult,
