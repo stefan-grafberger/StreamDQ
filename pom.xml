@@ -12,9 +12,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <java.version>1.8</java.version>
-        <flink.version>1.13.6</flink.version>
-        <scala.version>2.11</scala.version>
-        <flink.scala.version>2.11</flink.scala.version>
+        <flink.version>1.16.0</flink.version>
+        <scala.version>2.12</scala.version>
+        <flink.scala.version>2.12</flink.scala.version>
         <junit-jupiter.version>5.3.1</junit-jupiter.version>
         <mockito.version>2.22.0</mockito.version>
         <mockito-kotlin.version>1.6.0</mockito-kotlin.version>
@@ -44,9 +44,20 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${flink.scala.version}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-scala_2.12</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-runtime-web</artifactId>
+            <version>${flink.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -59,11 +70,25 @@
                 </exclusion>
             </exclusions>
         </dependency>
+      <!-- Flink CSV Connector -->
+      <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>flink-csv</artifactId>
+        <version>${flink.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <!-- Flink text file Connector -->
+      <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>flink-connector-files</artifactId>
+        <version>${flink.version}</version>
+        <scope>provided</scope>
+      </dependency>
 
         <!-- Allows to run the job on your local machine -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients_2.11</artifactId>
+            <artifactId>flink-clients</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
