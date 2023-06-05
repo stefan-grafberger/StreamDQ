@@ -2,8 +2,9 @@ package com.stefan_grafberger.streamdq.experiment
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
+import com.stefan_grafberger.streamdq.experiment.experimentlogger.ExperimentLogger
 import com.stefan_grafberger.streamdq.experiment.model.RedditPost
-import com.stefan_grafberger.streamdq.experiment.watermarkgenerator.TimeLagWatermarkGenerator
+import lombok.extern.slf4j.Slf4j
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -22,40 +23,26 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.concurrent.TimeUnit
 
+@Slf4j
 class RunTimeExperiment {
 
-    @Test
-    @Disabled
-    fun testTransferringNetflixCsvToStream() {
-        val conf = Configuration()
-        conf.setInteger(RestOptions.PORT, 8081)
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
-        env.parallelism = 1
-        val source = generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/netflix_movies_tvs.csv")
-        val csvInputStream = env.fromSource(source, WatermarkStrategy.forGenerator { TimeLagWatermarkGenerator() }, "Netflix Show")
-        csvInputStream.print("csvInputStream")
-        env.execute("flink-csv-reader")
-    }
+    private val log = ExperimentLogger()
 
     @Test
     @Disabled
     fun testOnRedditDataSet() {
-        //prepare env
-        val conf = Configuration()
-        conf.setInteger(RestOptions.PORT, 8081)
-        val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
-        env.parallelism = 1
+        //given
+        val env = createStreamExecutionEnvironment()
         //setup deserialization configuration
         val source = generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/reddit_posts_12million.csv")
-        val start = System.nanoTime()
-        //generate stream
+        //start generating stream and transformation
+        val startTransformationTime = System.nanoTime()
         val redditPostStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Reddit Posts")
                 .assignTimestampsAndWatermarks(
                         WatermarkStrategy.forMonotonousTimestamps<RedditPost>()
                                 .withTimestampAssigner { post, _ -> post.createdUtc!!.toLong() }
                 )
-        //given
         val detector = AggregateAnomalyCheck()
                 .onCompleteness("removedBy")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(1000)))
@@ -66,16 +53,22 @@ class RunTimeExperiment {
             detector.detectAnomalyStream(redditPostStream)
                     .filter { result -> result.isAnomaly!! }
         }
-        val endToEndTime = System.nanoTime() - start
         //then
-        println("End To End Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTime) + " ms")
-        println("Anomaly Detection Time: $detectDuration ms")
-        val (response, executionTime) = executeAndMeasureTimeMillis {
-            actualAnomalies.print("anomaly stream output")
-            env.execute()
-        }
-        println("Net Fink Job Run Time: ${response.netRuntime} ms")
-        println("Whole Job Execution Time: $executionTime ms")
+        val endToEndTransformationTime = System.nanoTime() - startTransformationTime
+        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
+        log.info("Anomaly Detection Transformation Time: $detectDuration ms")
+        //sink
+        actualAnomalies.print("anomaly stream output")
+        val jobExecutionResult = env.execute()
+        log.info("Net Fink Job Execution Run Time: ${jobExecutionResult.netRuntime} ms")
+    }
+
+    private fun createStreamExecutionEnvironment(): StreamExecutionEnvironment {
+        val conf = Configuration()
+        conf.setInteger(RestOptions.PORT, 8081)
+        val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
+        env.parallelism = 1
+        return env
     }
 
     private fun generateFileSourceFromPath(path: String): FileSource<RedditPost>? {
