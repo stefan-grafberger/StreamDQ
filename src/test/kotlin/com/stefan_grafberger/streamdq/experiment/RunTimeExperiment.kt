@@ -4,7 +4,6 @@ import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetect
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
 import com.stefan_grafberger.streamdq.experiment.experimentlogger.ExperimentLogger
 import com.stefan_grafberger.streamdq.experiment.model.RedditPost
-import lombok.extern.slf4j.Slf4j
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.concurrent.TimeUnit
 
-@Slf4j
 class RunTimeExperiment {
 
     private val log = ExperimentLogger()
