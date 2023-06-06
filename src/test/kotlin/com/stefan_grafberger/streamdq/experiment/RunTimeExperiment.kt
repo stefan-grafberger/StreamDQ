@@ -25,8 +25,13 @@ class RunTimeExperiment {
     fun testAnomalyDetectionRunTimeOnRedditDataSetEndToEnd() {
         //given
         val env = util.createStreamExecutionEnvironment()
+        val detector = AggregateAnomalyCheck()
+                .onApproxUniqueness("score")
+                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(10000)))
+                .withStrategy(DetectionStrategy().onlineNormal(0.0, 0.3))
+                .build()
         //setup deserialization
-        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/12M_reddit_posts.csv")
+        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/100M_reddit_posts.csv")
         val startTransformationTime = System.nanoTime()
         val redditPostStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Reddit Posts")
@@ -34,22 +39,17 @@ class RunTimeExperiment {
                         WatermarkStrategy.forMonotonousTimestamps<RedditPost>()
                                 .withTimestampAssigner { post, _ -> post.createdUtc!!.toLong() }
                 )
-        val detector = AggregateAnomalyCheck()
-                .onApproxUniqueness("score")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(1000)))
-                .withStrategy(DetectionStrategy().onlineNormal(0.0, 0.3))
-                .build()
         //when
         val (actualAnomalies, detectDuration) = util.executeAndMeasureTimeMillis {
             detector.detectAnomalyStream(redditPostStream)
         }
         //then
         val endToEndTransformationTime = System.nanoTime() - startTransformationTime
-        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
-        log.info("Anomaly Detection Transformation Time: $detectDuration ms")
         //sink
         actualAnomalies.print("AnomalyCheckResult stream output")
         val jobExecutionResult = env.execute()
+        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
+        log.info("End to End Anomaly Detection Transformation Time(Latency): $detectDuration ms")
         log.info("Net Fink Job Execution Run Time: ${jobExecutionResult.netRuntime} ms")
     }
 
@@ -59,7 +59,7 @@ class RunTimeExperiment {
         //given
         val env = util.createStreamExecutionEnvironment()
         //setup deserialization
-        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/12M_reddit_posts.csv")
+        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/100M_reddit_posts.csv")
         val startTransformationTime = System.nanoTime()
         val redditPostStream = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Reddit Posts")
@@ -70,17 +70,17 @@ class RunTimeExperiment {
         //when
         val (actualAnomalies, detectDuration) = util.executeAndMeasureTimeMillis {
             redditPostStream
-                    .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(1000)))
+                    .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(10000)))
                     .aggregate(ApproxUniquenessConstraint("score").getAggregateFunction(TypeInformation.of(RedditPost::class.java), env.config))
                     .returns(AggregateConstraintResult::class.java)
         }
         //then
         val endToEndTransformationTime = System.nanoTime() - startTransformationTime
-        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
-        log.info("Aggregation Constraint Function Transformation Time: $detectDuration ms")
         //sink
         actualAnomalies.print("AggregateConstraintResult stream output")
         val jobExecutionResult = env.execute()
+        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
+        log.info("Aggregation Constraint Function Transformation Time[Latency]: $detectDuration ms")
         log.info("Net Fink Job Execution Run Time: ${jobExecutionResult.netRuntime} ms")
     }
 
@@ -90,7 +90,7 @@ class RunTimeExperiment {
         //given
         val env = util.createStreamExecutionEnvironment()
         //setup deserialization
-        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/12M_reddit_posts.csv")
+        val source = util.generateFileSourceFromPath("src/test/kotlin/com/stefan_grafberger/streamdq/experiment/dataset/20M_reddit_posts.csv")
         val startTransformationTime = System.nanoTime()
         //when
         val redditPostStream = env
@@ -101,10 +101,10 @@ class RunTimeExperiment {
                 )
         //then
         val endToEndTransformationTime = System.nanoTime() - startTransformationTime
-        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
         //sink
         redditPostStream.print("RedditPostStream output")
         val jobExecutionResult = env.execute()
+        log.info("End To End Transformation Time: " + TimeUnit.NANOSECONDS.toMillis(endToEndTransformationTime) + " ms")
         log.info("Net Fink Job Execution Run Time: ${jobExecutionResult.netRuntime} ms")
     }
 }
