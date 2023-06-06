@@ -60,12 +60,12 @@ class VerificationSuiteTest {
                 .hasApproxQuantileBetween("intValue", 0.5, 7.0)
 
         // Define some checks using an Anomaly Detection strategy. Here, we run the check on a completeness metric
-        // that gets computed every 100ms. The anomaly detection check looks at the percentage change of the metric
-        // per window
+        // that gets computed every 100ms. The anomaly detection check works based on the standard deviation of the
+        // observed metrics.
         val anomalyCheck = AggregateAnomalyCheck()
             .onCompleteness("nestedInfo.nestedIntValue")
             .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-            .withStrategy(DetectionStrategy().threshold(0.1, 1.0))
+            .withStrategy(DetectionStrategy().onlineNormal(0.1, 1.0))
             .build()
 
         // Let's load the data and run the checks
@@ -129,8 +129,8 @@ class VerificationSuiteTest {
         val anomalyResultStream = verificationResult.getResultsForCheck(anomalyCheck)!!
         val firstAnomalyResults = anomalyResultStream.executeAndCollect().asSequence().take(3)
         println("--- Anomaly Check Results ---")
-        println("Strategy: ${(anomalyCheck as AggregateAnomalyDetector).strategy}, " +
-                "Constraint: ${anomalyCheck.constraint}")
+        println("Strategy: ${(anomalyCheck as AggregateAnomalyDetector).strategy}")
+        println("Metric: ${anomalyCheck.constraint}")
         firstAnomalyResults.forEach { aggregateCheckResult ->
             println("Completeness ${aggregateCheckResult.value!!} is an anomaly: ${aggregateCheckResult.isAnomaly!!}")
         }

@@ -25,12 +25,12 @@ import kotlin.math.sqrt
  * @param ignoreAnomalies       If set to true, ignores anomalous points in mean
  *                              and variance calculation.
  */
-class OnlineNormalStrategy<W : Window>(
-        private val lowerDeviationFactor: Double? = 3.0,
-        private val upperDeviationFactor: Double? = 3.0,
-        private val ignoreStartPercentage: Double = 0.1,
-        private val ignoreAnomalies: Boolean = true,
-        private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
+data class OnlineNormalStrategy<W : Window>(
+        val lowerDeviationFactor: Double? = 3.0,
+        val upperDeviationFactor: Double? = 3.0,
+        val ignoreStartPercentage: Double = 0.1,
+        val ignoreAnomalies: Boolean = true,
+        val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
 ) : AnomalyDetectionStrategy {
 
     init {
