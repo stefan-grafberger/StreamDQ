@@ -37,7 +37,9 @@ data class NumberSeries @JvmOverloads constructor(
 object TestDataUtils {
     fun createEnvAndGetClickStream(): Pair<StreamExecutionEnvironment, SingleOutputStreamOperator<ClickInfo>> {
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
-        Logger.getLogger("org.apache.flink").level = Level.OFF  // For demo purposes
+        // For demo purposes
+        Logger.getLogger("org.apache.flink").level = Level.OFF
+        Logger.getLogger("akka").level = Level.OFF
         val clickStream = environment.fromElements(
                 // First 100 ms window
                 ClickInfo(

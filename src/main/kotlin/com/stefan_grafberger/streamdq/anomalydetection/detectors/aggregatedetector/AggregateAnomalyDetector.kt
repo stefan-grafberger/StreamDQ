@@ -16,8 +16,8 @@ class AggregateAnomalyDetector(
 ) : AnomalyDetector {
 
     private var window: WindowAssigner<Any?, TimeWindow>
-    private var constraint: AggregateConstraint
-    private var strategy: AnomalyDetectionStrategy
+    var constraint: AggregateConstraint
+    var strategy: AnomalyDetectionStrategy
 
     init {
         this.window = window

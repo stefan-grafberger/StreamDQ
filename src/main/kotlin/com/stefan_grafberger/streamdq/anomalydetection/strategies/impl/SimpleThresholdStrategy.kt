@@ -6,9 +6,9 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.B
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 
-class SimpleThresholdStrategy(
-        private val lowerBound: Double = -Double.MAX_VALUE,
-        private val upperBound: Double) : AnomalyDetectionStrategy {
+data class SimpleThresholdStrategy(
+        val lowerBound: Double = -Double.MAX_VALUE,
+        val upperBound: Double) : AnomalyDetectionStrategy {
 
     init {
         require(lowerBound <= upperBound) { "The lower bound must be smaller or equal to the upper bound." }

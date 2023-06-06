@@ -22,33 +22,7 @@ class AnalysisRunner {
             stream: DataStream<IN>,
             rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
             continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
-            config: ExecutionConfig?
-    ): VerificationResult<IN, Any> {
-        val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
-        val streamObjectTypeInfo: TypeInformation<IN> = stream.type
-
-        val rowLevelResultMap = buildRowLevelResultMap(stream, uniqueRowLevelChecks, streamObjectTypeInfo, config)
-
-        val aggregateResultMap = buildAndAddAggResultStreams(
-                stream,
-                continuousChecksWithPotentialDuplicates,
-                streamObjectTypeInfo,
-                config
-        )
-
-        val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
-        return VerificationResult(
-                rowLevelResultMap,
-                aggregateResultMap,
-                rowLevelCheckIndexMap
-        )
-    }
-
-    fun <IN> addChecksToStream(
-            stream: DataStream<IN>,
             anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
-            rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
-            continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
             config: ExecutionConfig?
     ): VerificationResult<IN, Any> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
@@ -82,6 +56,7 @@ class AnalysisRunner {
             stream: KeyedStream<IN, KEY>,
             rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
             continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
+            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
             config: ExecutionConfig?
     ): VerificationResult<IN, KEY> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
@@ -97,10 +72,17 @@ class AnalysisRunner {
         )
 
         val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
+
+        val anomalyDetectionsResultMap = buildAndAddAnomalyDetectionResultStreams(
+            stream,
+            anomalyDetectionsWithPotentialDuplicates
+        )
+
         return VerificationResult(
                 rowLevelResultMap,
                 aggregateResultMap,
-                rowLevelCheckIndexMap
+                rowLevelCheckIndexMap,
+                anomalyDetectionsResultMap
         )
     }
 

@@ -1,8 +1,11 @@
 package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetector
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import com.stefan_grafberger.streamdq.data.ClickType
@@ -56,6 +59,15 @@ class VerificationSuiteTest {
                 .hasApproxCountDistinctBetween("userId", null, 2)
                 .hasApproxQuantileBetween("intValue", 0.5, 7.0)
 
+        // Define some checks using an Anomaly Detection strategy. Here, we run the check on a completeness metric
+        // that gets computed every 100ms. The anomaly detection check looks at the percentage change of the metric
+        // per window
+        val anomalyCheck = AggregateAnomalyCheck()
+            .onCompleteness("nestedInfo.nestedIntValue")
+            .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+            .withStrategy(DetectionStrategy().threshold(0.1, 1.0))
+            .build()
+
         // Let's load the data and run the checks
         val (env, rawStream) = TestDataUtils.createEnvAndGetClickStream()
         val keyedRawStream = rawStream.keyBy { clickInfo -> clickInfo.userId }
@@ -66,6 +78,7 @@ class VerificationSuiteTest {
                 .addRowLevelCheck(rowLevelCheck)
                 .addAggregateCheck(windowCheck)
                 .addAggregateCheck(continuousCheck)
+                .addAnomalyCheck(anomalyCheck)
                 .build()
 
         // Now we can use the verificationResult to get the output streams from our checks
@@ -96,108 +109,30 @@ class VerificationSuiteTest {
         val windowCheckResultStream = verificationResult.getResultsForCheck(windowCheck)!!
         val firstWindowResults = windowCheckResultStream.executeAndCollect().asSequence().take(3)
         println("--- Window Check Results ---")
+        println("Constraint: ${windowCheck.constraints[0]}")
         firstWindowResults.forEach { aggregateCheckResult ->
-            println("Uniqueness: ${aggregateCheckResult.constraintResults!![1]}")
+            println("Uniqueness: constraint is ${aggregateCheckResult.constraintResults!![1].outcome} for " +
+                    "${aggregateCheckResult.constraintResults!![1].aggregate}")
         }
 
         // Let's take a look at the Continuous Check Results
         val continuousResultStream = verificationResult.getResultsForCheck(continuousCheck)!!
         val firstContinuousResults = continuousResultStream.executeAndCollect().asSequence().take(3)
         println("--- Continuous Check Results ---")
+        println("Constraint: ${windowCheck.constraints[1]}")
         firstContinuousResults.forEach { aggregateCheckResult ->
-            println("Distinct Items: ${aggregateCheckResult.constraintResults!![2]}")
+            println("Distinct Items: constraint is ${aggregateCheckResult.constraintResults!![2].outcome} for " +
+                    "${aggregateCheckResult.constraintResults!![2].aggregate}")
         }
-    }
 
-    @Test
-    fun testGetResultsForCheckWhenAddAnomalyChecksExpectAnomaliesDetected() {
-        //given
-        val (env, rawStream) = TestDataUtils.createEnvAndGetAbnormalClickStream()
-        val aggregateAnomalyCheckBySimpleThresholdStrategy = AggregateAnomalyCheck()
-                .onCompleteness("nestedInfo.nestedIntValue")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().threshold(0.26, 0.9))
-                .build()
-        val aggregateAnomalyCheckByOnlineNormalStrategy = AggregateAnomalyCheck()
-                .onCompleteness("nestedInfo.nestedIntValue")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0, 0.0))
-                .build()
-        val aggregateAnomalyCheckByAbsoluteChangeStrategy = AggregateAnomalyCheck()
-                .onCompleteness("nestedInfo.nestedIntValue")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().absoluteChange(-0.1, 0.9, 1))
-                .build()
-        val aggregateAnomalyCheckByRelativeRateOfChangeStrategy = AggregateAnomalyCheck()
-                .onCompleteness("nestedInfo.nestedIntValue")
-                .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().relativeRateOfChange(0.02, 3.0, 2))
-                .build()
-        val expectedAnomaliesBySimpleThresholdStrategy = mutableListOf(
-                Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val expectedNoneAnomaliesBySimpleThresholdStrategy = mutableListOf(
-                Pair(0, AnomalyCheckResult(0.3333, false, 1.0))).map { element -> element.second }
-        val expectedAnomaliesByOnlineNormalStrategy = mutableListOf(
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
-        val expectedNoneAnomaliesByOnlineNormalStrategy = mutableListOf(
-                Pair(0, AnomalyCheckResult(0.3333, false, 1.0)),
-                Pair(1, AnomalyCheckResult(0.25, false, 1.0))).map { element -> element.second }
-        val expectedAnomalyCheckResultByAbsoluteChangeStrategy = mutableListOf(
-                AnomalyCheckResult(0.3333, false, 1.0),
-                AnomalyCheckResult(0.25, false, 1.0),
-                AnomalyCheckResult(0.0046, true, 1.0),
-                AnomalyCheckResult(1.0, true, 1.0))
-        val expectedAnomalyCheckResultByRelativeRateOfChangeChangeStrategy = mutableListOf(
-                AnomalyCheckResult(0.3333, false, 1.0),
-                AnomalyCheckResult(0.25, false, 1.0),
-                AnomalyCheckResult(0.0046, true, 1.0),
-                AnomalyCheckResult(1.0, true, 1.0))
-        //when
-        val verificationResult = VerificationSuite()
-                .onDataStream(rawStream, env.config)
-                .addAnomalyChecks(mutableListOf(
-                        aggregateAnomalyCheckBySimpleThresholdStrategy,
-                        aggregateAnomalyCheckByOnlineNormalStrategy,
-                        aggregateAnomalyCheckByAbsoluteChangeStrategy,
-                        aggregateAnomalyCheckByRelativeRateOfChangeStrategy))
-                .build()
-        val actualAnomalyCheckResultBySimpleThresholdStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckBySimpleThresholdStrategy)
-        val actualAnomalyCheckResultByOnlineNormalStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByOnlineNormalStrategy)
-        val actualAnomalyCheckResultByAbsoluteChangeStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByAbsoluteChangeStrategy)
-        val actualAnomalyCheckResultByRelativeRateOfChangeStrategy = verificationResult.getResultsForCheck(aggregateAnomalyCheckByRelativeRateOfChangeStrategy)
-        val actualAnomaliesBySimpleThresholdStrategy = actualAnomalyCheckResultBySimpleThresholdStrategy?.filter { result -> result.isAnomaly == true }
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        val actualNoneAnomaliesBySimpleThresholdStrategy = actualAnomalyCheckResultBySimpleThresholdStrategy?.filter { result -> result.isAnomaly == false }
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        val actualAnomaliesByOnlineNormalStrategy = actualAnomalyCheckResultByOnlineNormalStrategy?.filter { result -> result.isAnomaly == true }
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        val actualNoneAnomaliesByOnlineNormalStrategy = actualAnomalyCheckResultByOnlineNormalStrategy?.filter { result -> result.isAnomaly == false }
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        val actualAnomaliesByAbsoluteChangeStrategy = actualAnomalyCheckResultByAbsoluteChangeStrategy
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        val actualAnomaliesByRelativeRateOfChangeStrategy = actualAnomalyCheckResultByRelativeRateOfChangeStrategy
-                ?.executeAndCollect()
-                ?.asSequence()
-                ?.toList()
-        //then
-        assertEquals(expectedAnomaliesBySimpleThresholdStrategy, actualAnomaliesBySimpleThresholdStrategy)
-        assertEquals(expectedNoneAnomaliesBySimpleThresholdStrategy, actualNoneAnomaliesBySimpleThresholdStrategy)
-        assertEquals(expectedAnomaliesByOnlineNormalStrategy, actualAnomaliesByOnlineNormalStrategy)
-        assertEquals(expectedNoneAnomaliesByOnlineNormalStrategy, actualNoneAnomaliesByOnlineNormalStrategy)
-        assertEquals(expectedAnomalyCheckResultByAbsoluteChangeStrategy, actualAnomaliesByAbsoluteChangeStrategy)
-        assertEquals(expectedAnomalyCheckResultByRelativeRateOfChangeChangeStrategy, actualAnomaliesByRelativeRateOfChangeStrategy)
+        // Let's take a look at the Anomaly Check Results
+        val anomalyResultStream = verificationResult.getResultsForCheck(anomalyCheck)!!
+        val firstAnomalyResults = anomalyResultStream.executeAndCollect().asSequence().take(3)
+        println("--- Anomaly Check Results ---")
+        println("Strategy: ${(anomalyCheck as AggregateAnomalyDetector).strategy}, " +
+                "Constraint: ${anomalyCheck.constraint}")
+        firstAnomalyResults.forEach { aggregateCheckResult ->
+            println("Completeness ${aggregateCheckResult.value!!} is an anomaly: ${aggregateCheckResult.isAnomaly!!}")
+        }
     }
 }

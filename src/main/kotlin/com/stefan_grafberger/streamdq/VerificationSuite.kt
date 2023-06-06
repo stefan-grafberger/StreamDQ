@@ -14,7 +14,7 @@ data class VerificationResult<IN, KEY>(
         private val rowLevelCheckResults: Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>>,
         private val aggregateCheckResults: Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>>,
         private val rowLevelChecksWithIndex: Map<RowLevelCheck, Int>,
-        private val anomalyDetectionsResults: Map<AnomalyDetector, DataStream<AnomalyCheckResult>>? = null
+        private val anomalyDetectionsResults: Map<AnomalyDetector, DataStream<AnomalyCheckResult>>
 ) {
 
     fun getResultsForCheck(check: InternalAggregateCheck): DataStream<AggregateCheckResult<KEY>>? {
@@ -26,7 +26,7 @@ data class VerificationResult<IN, KEY>(
     }
 
     fun getResultsForCheck(detector: AnomalyDetector): DataStream<AnomalyCheckResult>? {
-        return anomalyDetectionsResults?.get(detector)
+        return anomalyDetectionsResults[detector]
     }
 }
 
@@ -81,14 +81,14 @@ class VerificationPipelineBuilder<STYPE, IN, KEY>(val stream: STYPE, val config:
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as KeyedStream<IN, KEY>
                 AnalysisRunner()
-                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, anomalyChecks, config)
             }
 
             is DataStream<*> -> {
                 @Suppress("UNCHECKED_CAST")
                 val typedStream = stream as DataStream<IN>
                 AnalysisRunner()
-                        .addChecksToStream(typedStream, anomalyChecks, rowLevelChecks, aggChecks, config)
+                        .addChecksToStream(typedStream, rowLevelChecks, aggChecks, anomalyChecks, config)
             }
 
             else -> {
