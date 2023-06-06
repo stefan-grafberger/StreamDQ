@@ -10,12 +10,19 @@ import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
+import org.apache.log4j.BasicConfigurator
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import java.math.BigDecimal
 import java.util.regex.Pattern
 import kotlin.test.assertEquals
+import org.apache.log4j.varia.NullAppender
+
+
+
 
 @TestInstance(Lifecycle.PER_CLASS)
 class VerificationSuiteTest {
