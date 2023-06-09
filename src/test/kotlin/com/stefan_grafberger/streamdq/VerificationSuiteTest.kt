@@ -2,10 +2,7 @@ package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyDetector
-import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
-import com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.SimpleThresholdStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
 import com.stefan_grafberger.streamdq.data.ClickType
@@ -13,18 +10,11 @@ import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.CountTrigger
-import org.apache.log4j.BasicConfigurator
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import java.math.BigDecimal
 import java.util.regex.Pattern
-import kotlin.test.assertEquals
-import org.apache.log4j.varia.NullAppender
-
-
 
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -119,7 +109,7 @@ class VerificationSuiteTest {
         val continuousResultStream = verificationResult.getResultsForCheck(continuousCheck)!!
         val firstContinuousResults = continuousResultStream.executeAndCollect().asSequence().take(3)
         println("--- Continuous Check Results ---")
-        println("Constraint: ${windowCheck.constraints[1]}")
+        println("Constraint: ${windowCheck.constraints[2]}")
         firstContinuousResults.forEach { aggregateCheckResult ->
             println("Distinct Items: constraint is ${aggregateCheckResult.constraintResults!![2].outcome} for " +
                     "${aggregateCheckResult.constraintResults!![2].aggregate}")
