@@ -1,0 +1,10 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%
+    patch: off
+
+ignore:
+  - "src/main/kotlin/org/apache/flink/streaming/util/typeutils"  # ignore copied files from flink
