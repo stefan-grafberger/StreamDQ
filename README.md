@@ -1,4 +1,4 @@
-# StreamDQ
+StreamDQ
 ================================
 
 [![StreamDQ](https://img.shields.io/badge/🔎-StreamDQ-green)](https://github.com/stefan-grafberger/StreamDQ)
