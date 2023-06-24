@@ -5,6 +5,8 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
 import kotlin.random.Random
 import kotlin.random.asJavaRandom
 
@@ -35,6 +37,9 @@ data class NumberSeries @JvmOverloads constructor(
 object TestDataUtils {
     fun createEnvAndGetClickStream(): Pair<StreamExecutionEnvironment, SingleOutputStreamOperator<ClickInfo>> {
         val environment = StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
+        // For demo purposes
+        Logger.getLogger("org.apache.flink").level = Level.OFF
+        Logger.getLogger("akka").level = Level.OFF
         val clickStream = environment.fromElements(
                 // First 100 ms window
                 ClickInfo(
