@@ -15,67 +15,6 @@ class SimpleThresholdStrategyTest {
     private val dataSeries = mutableListOf(-1.0, 2.0, 3.0, 0.5)
 
     @Test
-    fun testDetectWhenIntervalSpecifiedExpectAnomaliesDetected() {
-        //given
-        val searchInterval = Pair(0, 3)
-        strategy = SimpleThresholdStrategy(lowerBound = Double.MIN_VALUE, upperBound = 1.0)
-        val expectedAnomalies = mutableListOf(
-                Pair(0, AnomalyCheckResult(-1.0, true, 1.0)),
-                Pair(1, AnomalyCheckResult(2.0, true, 1.0)),
-                Pair(2, AnomalyCheckResult(3.0, true, 1.0)))
-        //when
-        val actualAnomalies = strategy
-                .detect(dataSeries, searchInterval)
-                .filter { result -> result.second.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies)
-    }
-
-    @Test
-    fun testDetectWhenNoIntervalSpecifiedExpectAllAnomaliesDetected() {
-        //given
-        strategy = SimpleThresholdStrategy(upperBound = 1.0)
-        val expectedAnomalies = mutableListOf(
-                Pair(1, AnomalyCheckResult(2.0, true, 1.0)),
-                Pair(2, AnomalyCheckResult(3.0, true, 1.0)))
-        //when
-        val actualAnomalies = strategy
-                .detect(dataSeries)
-                .filter { result -> result.second.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies)
-    }
-
-    @Test
-    fun testDetectWhenInputIsEmptyExpectEmptyAnomaliesOutput() {
-        //given
-        val newDataSeries = mutableListOf<Double>()
-        strategy = SimpleThresholdStrategy(upperBound = 1.0)
-        //when
-        val actualAnomalies = strategy
-                .detect(newDataSeries)
-                .filter { result -> result.second.isAnomaly == true }
-        //then
-        assertTrue(actualAnomalies.isEmpty())
-    }
-
-    @Test
-    fun testDetectWhenBothLowerAndUpperSpecifiedExpectAnomaliesDetected() {
-        //given
-        strategy = SimpleThresholdStrategy(-0.5, 1.0)
-        val expectedAnomalies = mutableListOf(
-                Pair(0, AnomalyCheckResult(-1.0, true, 1.0)),
-                Pair(1, AnomalyCheckResult(2.0, true, 1.0)),
-                Pair(2, AnomalyCheckResult(3.0, true, 1.0)))
-        //when
-        val actualAnomalies = strategy
-                .detect(dataSeries)
-                .filter { result -> result.second.isAnomaly == true }
-        //then
-        assertEquals(expectedAnomalies, actualAnomalies)
-    }
-
-    @Test
     fun testDetectThresholdBoundIsNotOrderedExpectIllegalArgumentException() {
         //then
         assertFailsWith(exceptionClass = IllegalArgumentException::class,

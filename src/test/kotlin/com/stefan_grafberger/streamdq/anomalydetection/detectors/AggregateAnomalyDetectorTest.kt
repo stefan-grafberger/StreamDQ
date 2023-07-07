@@ -21,7 +21,7 @@ class AggregateAnomalyDetectorTest {
         val detector = aggregateAnomalyCheck
                 .onCompleteness("nestedInfo.nestedIntValue")
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
-                .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0, 0.0))
+                .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0))
                 .build()
         val expectedAnomalies = mutableListOf(
                 Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
