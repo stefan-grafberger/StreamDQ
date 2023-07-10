@@ -4,6 +4,17 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetecti
 import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 
+/**
+ * The interface for building AnomalyDetector
+ * It is used for adding all the needed configurations
+ * when user define anomaly check before using it in the
+ * [com.stefan_grafberger.streamdq.VerificationSuite]
+ *
+ * @Override by [com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector]
+ *
+ * @author Tong Wu
+ * @since 1.0
+ */
 interface AnomalyCheck {
     fun build(): AnomalyDetector
     fun onCompleteness(keyExpressionString: String): AnomalyCheck
