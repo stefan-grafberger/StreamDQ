@@ -11,13 +11,15 @@ import org.apache.flink.streaming.api.windowing.windows.Window
 
 /**
  * Detects anomaly based on the currently running mean and standard deviation
- * Can also exclude the anomalies from computation so that it will not affect
  * Assume the data is normal distributed
  *
- * @param lowerDeviationFactor  Catch anomalies if the data stream has a mean
- *                              smaller than mean - lowerDeviationFactor * stdDev
- * @param upperDeviationFactor  Catch anomalies if the data stream has a mean
- *                              bigger than mean + upperDeviationFactor * stdDev
+ * @param lowerDeviationFactor   Catch anomalies if the data stream has a mean
+ *                               smaller than mean - lowerDeviationFactor * stdDev
+ * @param upperDeviationFactor   Catch anomalies if the data stream has a mean
+ *                               bigger than mean + upperDeviationFactor * stdDev
+ * @param strategyWindowAssigner Flink window assigner used for windowing the data stream
+ *                               and perform aggregate computation to detect anomalies
+ *                               based on windowed stream
  */
 data class OnlineNormalStrategy<W : Window>(
     val lowerDeviationFactor: Double? = 3.0,
