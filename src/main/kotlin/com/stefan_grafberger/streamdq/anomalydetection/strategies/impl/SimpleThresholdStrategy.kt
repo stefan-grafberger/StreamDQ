@@ -6,6 +6,13 @@ import com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions.B
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 
+/**
+ * Detects anomaly based on the current element value in the data stream
+ * Check if values are in a specified range.
+ *
+ * @param lowerBound Lower bound of accepted range of values
+ * @param upperBound Upper bound of accepted range of values
+ */
 data class SimpleThresholdStrategy(
     val lowerBound: Double = -Double.MAX_VALUE,
     val upperBound: Double
