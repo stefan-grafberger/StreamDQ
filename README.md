@@ -5,9 +5,11 @@ StreamDQ is a library built on top of Apache Flink for defining "unit tests for 
 
 ## Example
 ```kotlin
-import com.stefan_grafberger.streamdq.VerificationSuite
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
+import com.stefan_grafberger.streamdq.VerificationSuite
 
 val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(LOCAL_PARALLELISM)
 env.streamTimeCharacteristic = TimeCharacteristic.EventTime
