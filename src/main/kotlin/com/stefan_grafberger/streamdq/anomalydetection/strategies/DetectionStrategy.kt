@@ -9,6 +9,13 @@ import org.apache.flink.streaming.api.windowing.assigners.WindowAssigner
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.apache.flink.streaming.api.windowing.windows.Window
 
+/**
+ * A class for centering the anomaly detection strategies so that
+ * anomaly detection is more user-friendly
+ *
+ * @author stefan Grafberger, Tong Wu
+ * @since 1.0
+ */
 class DetectionStrategy {
 
     fun onlineNormal(
