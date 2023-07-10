@@ -7,6 +7,7 @@ import org.apache.flink.api.java.tuple.Tuple3
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+@Deprecated("Use OnlineNormalAggregate with sliding window replace this")
 class IntervalNormalAggregate(
         private val lowerDeviationFactor: Double? = 3.0,
         private val upperDeviationFactor: Double? = 3.0,

@@ -6,9 +6,22 @@ import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple7
 import kotlin.math.sqrt
 
+/**
+ * Online normal aggregate function for detecting anomaly.
+ * detecting anomalies based on a customized bound on the
+ * number of standard deviations they are allowed to be
+ * different from the mean
+ *
+ * This aggregate function is used in
+ * [com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy]
+ *
+ * @see <a href="https://fanf2.user.srcf.net/hermes/doc/antiforgery/stats.pdf">Incremental calculation of variance</a>
+ * @author Tong Wu
+ * @since 1.0
+ */
 class OnlineNormalAggregate(
-        private val lowerDeviationFactor: Double? = 3.0,
-        private val upperDeviationFactor: Double? = 3.0,
+    private val lowerDeviationFactor: Double? = 3.0,
+    private val upperDeviationFactor: Double? = 3.0,
 ) : AggregateFunction<AggregateConstraintResult,
         Tuple7<Double, Double, Double, Double, Double, Double, Long>,
         NormalStrategyResultDto> {
@@ -26,8 +39,10 @@ class OnlineNormalAggregate(
         return Tuple7(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L)
     }
 
-    override fun add(aggregateConstraintResult: AggregateConstraintResult,
-                     acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>)
+    override fun add(
+        aggregateConstraintResult: AggregateConstraintResult,
+        acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>
+    )
             : Tuple7<Double, Double, Double, Double, Double, Double, Long> {
 
         currentValue = aggregateConstraintResult.aggregate!!
@@ -46,8 +61,9 @@ class OnlineNormalAggregate(
         acc.f3 = acc.f5 / (acc.f6 + 1)
 
         return Tuple7<Double, Double, Double, Double, Double, Double, Long>(
-                acc.f0, acc.f1, acc.f2, acc.f3,
-                acc.f4, acc.f5, acc.f6 + 1L)
+            acc.f0, acc.f1, acc.f2, acc.f3,
+            acc.f4, acc.f5, acc.f6 + 1L
+        )
     }
 
     override fun getResult(acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>): NormalStrategyResultDto {
@@ -66,11 +82,14 @@ class OnlineNormalAggregate(
         }
     }
 
-    override fun merge(acc0: Tuple7<Double, Double, Double, Double, Double, Double, Long>,
-                       acc1: Tuple7<Double, Double, Double, Double, Double, Double, Long>)
+    override fun merge(
+        acc0: Tuple7<Double, Double, Double, Double, Double, Double, Long>,
+        acc1: Tuple7<Double, Double, Double, Double, Double, Double, Long>
+    )
             : Tuple7<Double, Double, Double, Double, Double, Double, Long> {
         return Tuple7<Double, Double, Double, Double, Double, Double, Long>(
-                acc1.f0, acc1.f1, acc1.f2, acc1.f3,
-                acc1.f4, acc1.f5, acc1.f6 + 1L)
+            acc1.f0, acc1.f1, acc1.f2, acc1.f3,
+            acc1.f4, acc1.f5, acc1.f6 + 1L
+        )
     }
 }
