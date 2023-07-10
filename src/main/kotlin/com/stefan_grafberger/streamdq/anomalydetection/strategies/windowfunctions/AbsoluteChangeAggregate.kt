@@ -6,14 +6,25 @@ import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple4
 
 /**
- * accumulator (currentValue, list of last element of each order, currentChangeRate, count)
- * the list contains the last value of Order n(order integer) to order 1
- * the first order elements will be none anomaly since we can not determine
+ * AbsoluteChangeAggregate function is used to detect anomalies
+ * based on the data's absolute change(minus) in the stream.
+ * Taking an embedded list in the accumulator approach. The list
+ * has a length of order and stores its computation result of each
+ * order and will be updated when the next new element comes.
+ *
+ * This aggregate function is used in
+ * [com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.AbsoluteChangeStrategy]
+ *
+ * @param maxRateDecrease Upper bound of accepted decrease (lower bound of increase).
+ * @param maxRateIncrease Upper bound of accepted growth.
+ * @param order           order of the derivative
+ * @author Tong Wu
+ * @since 1.0
  */
 class AbsoluteChangeAggregate(
-        private val maxRateDecrease: Double = -Double.MAX_VALUE,
-        private val maxRateIncrease: Double = Double.MAX_VALUE,
-        private val order: Int = 1
+    private val maxRateDecrease: Double = -Double.MAX_VALUE,
+    private val maxRateIncrease: Double = Double.MAX_VALUE,
+    private val order: Int = 1
 ) : AggregateFunction<AggregateConstraintResult,
         Tuple4<Double, MutableList<Double>, Double, Long>,
         AnomalyCheckResult> {
@@ -22,12 +33,19 @@ class AbsoluteChangeAggregate(
     private var preOrderList: MutableList<Double> = mutableListOf()
     private var initialList: MutableList<Double> = mutableListOf()
 
+    /**
+     * accumulator (currentValue, list of last element of each order, currentChangeRate, count)
+     * the list contains the last value of Order n(order integer) to order 1
+     * the first order elements will be none anomaly since we can not determine
+     */
     override fun createAccumulator(): Tuple4<Double, MutableList<Double>, Double, Long> {
         return Tuple4(0.0, mutableListOf(), 0.0, 0L)
     }
 
-    override fun add(aggregateConstraintResult: AggregateConstraintResult,
-                     acc: Tuple4<Double, MutableList<Double>, Double, Long>)
+    override fun add(
+        aggregateConstraintResult: AggregateConstraintResult,
+        acc: Tuple4<Double, MutableList<Double>, Double, Long>
+    )
             : Tuple4<Double, MutableList<Double>, Double, Long> {
 
         currentValue = aggregateConstraintResult.aggregate!!
@@ -57,11 +75,22 @@ class AbsoluteChangeAggregate(
         return AnomalyCheckResult(acc.f0, false, 1.0)
     }
 
-    override fun merge(acc0: Tuple4<Double, MutableList<Double>, Double, Long>, acc1: Tuple4<Double, MutableList<Double>, Double, Long>): Tuple4<Double, MutableList<Double>, Double, Long> {
-        return Tuple4(acc0.f0 + acc1.f0, (acc0.f1 + acc1.f1).toMutableList(), acc0.f2 + acc1.f2, acc0.f3 + acc1.f3)
+    override fun merge(
+        acc0: Tuple4<Double, MutableList<Double>, Double, Long>,
+        acc1: Tuple4<Double, MutableList<Double>, Double, Long>
+    ): Tuple4<Double, MutableList<Double>, Double, Long> {
+        return Tuple4(
+            acc0.f0 + acc1.f0,
+            (acc0.f1 + acc1.f1).toMutableList(),
+            acc0.f2 + acc1.f2,
+            acc0.f3 + acc1.f3
+        )
     }
 
-    private fun initializeBeforeDetect(preOrderList: MutableList<Double>, order: Int): MutableList<Double> {
+    private fun initializeBeforeDetect(
+        preOrderList: MutableList<Double>,
+        order: Int
+    ): MutableList<Double> {
         require(preOrderList.size == order) { "require preOrderList has size of order to initialize before detect" }
         if (order == 1 || preOrderList.size == 0) {
             initialList.add(preOrderList.last())
@@ -70,9 +99,9 @@ class AbsoluteChangeAggregate(
             val valuesRight = preOrderList.slice(1 until preOrderList.size)
             val valuesLeft = preOrderList.slice(0 until preOrderList.size - 1)
             initializeBeforeDetect(valuesRight
-                    .zip(valuesLeft)
-                    .map { (val1, val2) -> val1 - val2 }
-                    .toMutableList(), order - 1)
+                .zip(valuesLeft)
+                .map { (val1, val2) -> val1 - val2 }
+                .toMutableList(), order - 1)
         }
         return initialList
     }
