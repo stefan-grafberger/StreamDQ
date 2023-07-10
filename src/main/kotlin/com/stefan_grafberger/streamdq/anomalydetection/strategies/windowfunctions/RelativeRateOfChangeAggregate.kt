@@ -5,6 +5,22 @@ import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple4
 
+/**
+ * RelativeRateOfChangeAggregate function is used to detect anomalies
+ * based on the data's relative change(division computation) in the stream.
+ * Taking an sliding double-ended queue in the accumulator approach. The deque
+ * has a length of order and stores the incoming element in the stream and It's
+ * previously consecutively 2 elements
+ *
+ * This aggregate function is used in
+ * [com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.RelativeRateOfChangeStrategy]
+ *
+ * @param maxRateDecrease Upper bound of accepted decrease (lower bound of increase).
+ * @param maxRateIncrease Upper bound of accepted growth.
+ * @param order           order of the derivative
+ * @author Tong Wu
+ * @since 1.0
+ */
 class RelativeRateOfChangeAggregate(
         private val maxRateDecrease: Double = -Double.MAX_VALUE,
         private val maxRateIncrease: Double = Double.MAX_VALUE,
