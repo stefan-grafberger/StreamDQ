@@ -1,10 +1,28 @@
-# StreamDQ
+StreamDQ
+================================
 
-## Description
+[![StreamDQ](https://img.shields.io/badge/🔎-StreamDQ-green)](https://github.com/stefan-grafberger/StreamDQ)
+[![GitHub license](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/stefan-grafberger/StreamDQ/blob/master/LICENSE)
+[![Build Status](https://github.com/stefan-grafberger/mlinspect/actions/workflows/build.yml/badge.svg)](https://github.com/stefan-grafberger/StreamDQ/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/stefan-grafberger/StreamDQ/branch/main/graph/badge.svg?token=NFGV6VEJTI)](https://codecov.io/gh/stefan-grafberger/StreamDQ)
+
 StreamDQ is a library built on top of Apache Flink for defining "unit tests for data", which measure data quality in large data streams. 
 
-## Example
-```kotlin
+## Run StreamDQ locally
+
+Prerequisite: Java 11, Maven
+
+1. Clone this repository
+2. Switch to its directory
+
+   `cd StreamDQ` <br>
+3. Install and run the tests
+
+   `mvn install` <br>
+
+## How to use StreamDQ
+```kotlin 
+import com.stefan_grafberger.streamdq.VerificationSuite
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
@@ -38,3 +56,7 @@ val verificationResult = VerificationSuite()
         .build())
     .build()                
 ```
+
+
+## License
+This library is licensed under the Apache 2.0 License.
