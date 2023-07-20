@@ -18,13 +18,13 @@ import org.apache.flink.api.java.tuple.Tuple4
  * @param maxRateDecrease Upper bound of accepted decrease (lower bound of increase).
  * @param maxRateIncrease Upper bound of accepted growth.
  * @param order           order of the derivative
- * @author Tong Wu
+ *
  * @since 1.0
  */
 class AbsoluteChangeAggregate(
-    private val maxRateDecrease: Double = -Double.MAX_VALUE,
-    private val maxRateIncrease: Double = Double.MAX_VALUE,
-    private val order: Int = 1
+        private val maxRateDecrease: Double = -Double.MAX_VALUE,
+        private val maxRateIncrease: Double = Double.MAX_VALUE,
+        private val order: Int = 1
 ) : AggregateFunction<AggregateConstraintResult,
         Tuple4<Double, MutableList<Double>, Double, Long>,
         AnomalyCheckResult> {
@@ -43,8 +43,8 @@ class AbsoluteChangeAggregate(
     }
 
     override fun add(
-        aggregateConstraintResult: AggregateConstraintResult,
-        acc: Tuple4<Double, MutableList<Double>, Double, Long>
+            aggregateConstraintResult: AggregateConstraintResult,
+            acc: Tuple4<Double, MutableList<Double>, Double, Long>
     )
             : Tuple4<Double, MutableList<Double>, Double, Long> {
 
@@ -76,20 +76,20 @@ class AbsoluteChangeAggregate(
     }
 
     override fun merge(
-        acc0: Tuple4<Double, MutableList<Double>, Double, Long>,
-        acc1: Tuple4<Double, MutableList<Double>, Double, Long>
+            acc0: Tuple4<Double, MutableList<Double>, Double, Long>,
+            acc1: Tuple4<Double, MutableList<Double>, Double, Long>
     ): Tuple4<Double, MutableList<Double>, Double, Long> {
         return Tuple4(
-            acc0.f0 + acc1.f0,
-            (acc0.f1 + acc1.f1).toMutableList(),
-            acc0.f2 + acc1.f2,
-            acc0.f3 + acc1.f3
+                acc0.f0 + acc1.f0,
+                (acc0.f1 + acc1.f1).toMutableList(),
+                acc0.f2 + acc1.f2,
+                acc0.f3 + acc1.f3
         )
     }
 
     private fun initializeBeforeDetect(
-        preOrderList: MutableList<Double>,
-        order: Int
+            preOrderList: MutableList<Double>,
+            order: Int
     ): MutableList<Double> {
         require(preOrderList.size == order) { "require preOrderList has size of order to initialize before detect" }
         if (order == 1 || preOrderList.size == 0) {
@@ -99,9 +99,9 @@ class AbsoluteChangeAggregate(
             val valuesRight = preOrderList.slice(1 until preOrderList.size)
             val valuesLeft = preOrderList.slice(0 until preOrderList.size - 1)
             initializeBeforeDetect(valuesRight
-                .zip(valuesLeft)
-                .map { (val1, val2) -> val1 - val2 }
-                .toMutableList(), order - 1)
+                    .zip(valuesLeft)
+                    .map { (val1, val2) -> val1 - val2 }
+                    .toMutableList(), order - 1)
         }
         return initialList
     }

@@ -22,27 +22,27 @@ import org.apache.flink.streaming.api.windowing.windows.Window
  *                               based on windowed stream
  */
 data class OnlineNormalStrategy<W : Window>(
-    val lowerDeviationFactor: Double? = 3.0,
-    val upperDeviationFactor: Double? = 3.0,
-    val ignoreAnomalies: Boolean = true,
-    val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
+        val lowerDeviationFactor: Double? = 3.0,
+        val upperDeviationFactor: Double? = 3.0,
+        val ignoreAnomalies: Boolean = true,
+        val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
 ) : AnomalyDetectionStrategy {
 
     init {
         require(lowerDeviationFactor != null || upperDeviationFactor != null) { "At least one factor has to be specified." }
         require(
-            (lowerDeviationFactor ?: 1.0) >= 0 && (upperDeviationFactor
-                ?: 1.0) >= 0
+                (lowerDeviationFactor ?: 1.0) >= 0 && (upperDeviationFactor
+                        ?: 1.0) >= 0
         ) { "Factors cannot be smaller than zero." }
     }
 
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>)
             : SingleOutputStreamOperator<AnomalyCheckResult> {
         return dataStream
-            .windowAll(strategyWindowAssigner)
-            .trigger(CountTrigger.of(1))
-            .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
-            .map { data -> AnomalyCheckResult(data.value, data.isAnomaly, 1.0) }
-            .returns(AnomalyCheckResult::class.java)
+                .windowAll(strategyWindowAssigner)
+                .trigger(CountTrigger.of(1))
+                .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
+                .map { data -> AnomalyCheckResult(data.value, data.isAnomaly, 1.0) }
+                .returns(AnomalyCheckResult::class.java)
     }
 }

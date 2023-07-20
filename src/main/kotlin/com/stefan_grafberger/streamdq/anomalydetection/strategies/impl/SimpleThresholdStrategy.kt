@@ -14,8 +14,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
  * @param upperBound Upper bound of accepted range of values
  */
 data class SimpleThresholdStrategy(
-    val lowerBound: Double = -Double.MAX_VALUE,
-    val upperBound: Double
+        val lowerBound: Double = -Double.MAX_VALUE,
+        val upperBound: Double
 ) : AnomalyDetectionStrategy {
 
     init {
@@ -25,10 +25,10 @@ data class SimpleThresholdStrategy(
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         val (startTimeStamp, endTimeStamp) = Pair(Long.MIN_VALUE, Long.MAX_VALUE)
         return dataStream
-            .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
-            .map { data -> AnomalyCheckResult(data.aggregate, false, confidence = 1.0) }
-            .returns(AnomalyCheckResult::class.java)
-            .map(BoundMapFunction(lowerBound, upperBound))
-            .returns(AnomalyCheckResult::class.java)
+                .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
+                .map { data -> AnomalyCheckResult(data.aggregate, false, confidence = 1.0) }
+                .returns(AnomalyCheckResult::class.java)
+                .map(BoundMapFunction(lowerBound, upperBound))
+                .returns(AnomalyCheckResult::class.java)
     }
 }

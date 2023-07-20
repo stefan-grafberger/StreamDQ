@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
  *
  * @Override by [com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector]
  *
- * @author Tong Wu
  * @since 1.0
  */
 interface AnomalyCheck {

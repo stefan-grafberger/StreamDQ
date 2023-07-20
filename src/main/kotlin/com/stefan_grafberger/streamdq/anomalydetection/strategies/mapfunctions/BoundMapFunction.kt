@@ -13,7 +13,7 @@ import org.apache.flink.api.common.functions.MapFunction
  *
  * @param lowerBound Upper bound of element value in the stream
  * @param upperBound Upper bound of element value in the stream
- * @author Tong Wu
+ *
  * @since 1.0
  */
 class BoundMapFunction(

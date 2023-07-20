@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
  *
  * @Override by [com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector]
  *
- * @author Tong Wu
  * @since 1.0
  */
 interface AnomalyDetector {

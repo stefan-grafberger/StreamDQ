@@ -18,7 +18,7 @@ import org.apache.flink.api.java.tuple.Tuple4
  * @param maxRateDecrease Upper bound of accepted decrease (lower bound of increase).
  * @param maxRateIncrease Upper bound of accepted growth.
  * @param order           order of the derivative
- * @author Tong Wu
+ *
  * @since 1.0
  */
 class RelativeRateOfChangeAggregate(

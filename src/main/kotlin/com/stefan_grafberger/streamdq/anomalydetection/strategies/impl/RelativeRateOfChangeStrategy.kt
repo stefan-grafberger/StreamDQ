@@ -20,16 +20,16 @@ import org.apache.flink.streaming.api.windowing.windows.Window
  * @param order: order of the derivative
  */
 class RelativeRateOfChangeStrategy<W : Window>(
-    private val maxRateDecrease: Double = -Double.MAX_VALUE,
-    private val maxRateIncrease: Double = Double.MAX_VALUE,
-    private val order: Int = 1,
-    private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
+        private val maxRateDecrease: Double = -Double.MAX_VALUE,
+        private val maxRateIncrease: Double = Double.MAX_VALUE,
+        private val order: Int = 1,
+        private val strategyWindowAssigner: WindowAssigner<Any?, W>? = null
 ) : AnomalyDetectionStrategy {
 
     override fun detect(dataStream: SingleOutputStreamOperator<AggregateConstraintResult>): SingleOutputStreamOperator<AnomalyCheckResult> {
         return dataStream
-            .windowAll(strategyWindowAssigner)
-            .trigger(CountTrigger.of(1))
-            .aggregate(RelativeRateOfChangeAggregate(maxRateDecrease, maxRateIncrease, order))
+                .windowAll(strategyWindowAssigner)
+                .trigger(CountTrigger.of(1))
+                .aggregate(RelativeRateOfChangeAggregate(maxRateDecrease, maxRateIncrease, order))
     }
 }
