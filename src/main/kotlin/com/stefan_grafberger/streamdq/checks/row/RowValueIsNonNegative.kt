@@ -9,45 +9,43 @@ import org.apache.flink.streaming.util.typeutils.NullCheckingFieldAccessorFactor
 import java.math.BigDecimal
 
 data class RowValueIsNonNegative(
-    override val keyExpressionString: String
-):
-    RowLevelConstraint() {
+        override val keyExpressionString: String
+) :
+        RowLevelConstraint() {
     override fun <T> getCheckResultMapper(
-        streamObjectTypeInfo: TypeInformation<T>,
-        config: ExecutionConfig?
+            streamObjectTypeInfo: TypeInformation<T>,
+            config: ExecutionConfig?
     ): TypeQueryableRowMapFunction<T> {
         return RowValueIsNonNegativeRowMapFunction(
-            streamObjectTypeInfo,
-            toString(),
-            keyExpressionString, config
+                streamObjectTypeInfo,
+                toString(),
+                keyExpressionString, config
         )
     }
 }
 
 class RowValueIsNonNegativeRowMapFunction<T>(
-    streamObjectTypeInfo: TypeInformation<T>,
-    val checkName: String,
-    val keyExpressionString: String,
-    val config: ExecutionConfig?
+        streamObjectTypeInfo: TypeInformation<T>,
+        val checkName: String,
+        val keyExpressionString: String,
+        val config: ExecutionConfig?
 ) : TypeQueryableRowMapFunction<T>() {
 
     private val fieldAccessor: FieldAccessor<T, Any>
+
     init {
         fieldAccessor = NullCheckingFieldAccessorFactory.getAccessor(streamObjectTypeInfo, keyExpressionString, config)
     }
 
     override fun map(value: T): RowLevelConstraintResult {
-        // TODO: Support different comparable types
         val fieldValue = this.fieldAccessor.get(value)
-        val bigDecimalFieldValue = if (fieldValue is Long) {
-            BigDecimal.valueOf(fieldValue)
-        } else if (fieldValue is Double) {
-            BigDecimal.valueOf(fieldValue)
+        val bigDecimalFieldValue = if (fieldValue is Number) {
+            BigDecimal.valueOf(fieldValue.toDouble())
         } else {
             throw NotImplementedError("TODO: Support more comparable types")
         }
         val notLessThan: (BigDecimal, BigDecimal) -> Boolean = { x: BigDecimal, y: BigDecimal -> x >= y }
-        val isNonNegative = notLessThan(bigDecimalFieldValue,BigDecimal(0))
+        val isNonNegative = notLessThan(bigDecimalFieldValue, BigDecimal(0))
         return RowLevelConstraintResult(isNonNegative, checkName)
     }
 }
