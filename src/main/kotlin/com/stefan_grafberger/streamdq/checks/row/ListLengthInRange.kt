@@ -41,9 +41,8 @@ class ListLengthInRangeRowMapFunction<T>(
         fieldAccessor = NullCheckingFieldAccessorFactory.getAccessor(streamObjectTypeInfo, keyExpressionString, config)
     }
     override fun map(value: T): RowLevelConstraintResult {
-        // TODO: Support different comparable types
         val fieldValue = this.fieldAccessor.get(value)
-        val listLength = if(fieldValue is List<*>) {
+        val listLength = if(fieldValue is Collection<*>) {
             fieldValue.size
         } else {
             throw NotImplementedError("TODO: Support more comparable types")
