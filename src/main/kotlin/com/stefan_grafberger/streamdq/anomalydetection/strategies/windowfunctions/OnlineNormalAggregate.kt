@@ -1,9 +1,9 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
+import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyAccumulator
 import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
-import org.apache.flink.api.java.tuple.Tuple7
 import kotlin.math.sqrt
 
 /**
@@ -15,13 +15,13 @@ import kotlin.math.sqrt
  * This aggregate function is used in
  * [com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy]
  *
- * @see <a href="https://fanf2.user.srcf.net/hermes/doc/antiforgery/stats.pdf">Incremental calculation of variance</a>
+ * @see <a href="https://fanlastVariance.user.srcf.net/hermes/doc/antiforgery/stats.pdf">Incremental calculation of variance</a>
  */
 class OnlineNormalAggregate(
         private val lowerDeviationFactor: Double? = 3.0,
         private val upperDeviationFactor: Double? = 3.0,
 ) : AggregateFunction<AggregateConstraintResult,
-        Tuple7<Double, Double, Double, Double, Double, Double, Long>,
+        NormalStrategyAccumulator,
         NormalStrategyResult> {
 
     private var currentValue = 0.0
@@ -29,65 +29,62 @@ class OnlineNormalAggregate(
     /**
      * accumulator used to preserve current mean of aggregate values,
      * current variance and count of the elements
-     * Tuple7
-     * (lastMean f0, currentMean f1, lastVariance f2,
-     * currentVariance f3, lastSn f4, sn f5, count f6)
      */
-    override fun createAccumulator(): Tuple7<Double, Double, Double, Double, Double, Double, Long> {
-        return Tuple7(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L)
+    override fun createAccumulator(): NormalStrategyAccumulator {
+        return NormalStrategyAccumulator(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0L)
     }
 
     override fun add(
             aggregateConstraintResult: AggregateConstraintResult,
-            acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>
+            acc: NormalStrategyAccumulator
     )
-            : Tuple7<Double, Double, Double, Double, Double, Double, Long> {
+            : NormalStrategyAccumulator {
 
         currentValue = aggregateConstraintResult.aggregate!!
 
-        acc.f0 = acc.f1
-        acc.f2 = acc.f3
-        acc.f4 = acc.f5
+        acc.lastMean = acc.currentMean
+        acc.lastVariance = acc.currentVariance
+        acc.lastSn = acc.sn
 
-        acc.f1 = if (acc.f6 == 0L) {
+        acc.currentMean = if (acc.count == 0L) {
             currentValue
         } else {
-            acc.f0 + (1.0 / (acc.f6 + 1)) * (currentValue - acc.f0)
+            acc.lastMean + (1.0 / (acc.count + 1)) * (currentValue - acc.lastMean)
         }
 
-        acc.f5 += (currentValue - acc.f0) * (currentValue - acc.f1)
-        acc.f3 = acc.f5 / (acc.f6 + 1)
+        acc.sn += (currentValue - acc.lastMean) * (currentValue - acc.currentMean)
+        acc.currentVariance = acc.sn / (acc.count + 1)
 
-        return Tuple7<Double, Double, Double, Double, Double, Double, Long>(
-                acc.f0, acc.f1, acc.f2, acc.f3,
-                acc.f4, acc.f5, acc.f6 + 1L
+        return NormalStrategyAccumulator(
+                acc.lastMean, acc.currentMean, acc.lastVariance, acc.currentVariance,
+                acc.lastSn, acc.sn, acc.count + 1L
         )
     }
 
-    override fun getResult(acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>): NormalStrategyResult {
-        val stdDev = sqrt(acc.f3)
-        val upperBound = acc.f1 + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
-        val lowerBound = acc.f1 - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
+    override fun getResult(acc: NormalStrategyAccumulator): NormalStrategyResult {
+        val stdDev = sqrt(acc.currentVariance)
+        val upperBound = acc.currentMean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
+        val lowerBound = acc.currentMean - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
         return if (currentValue in lowerBound..upperBound) {
-            NormalStrategyResult(currentValue, acc.f1, stdDev, isAnomaly = false)
+            NormalStrategyResult(currentValue, acc.currentMean, stdDev, isAnomaly = false)
         } else {
             // AnomalyCheckResult won't affect mean and variance
-            acc.f1 = acc.f0
-            acc.f3 = acc.f2
-            acc.f5 = acc.f4
-            NormalStrategyResult(currentValue, acc.f1, stdDev, isAnomaly = true)
+            acc.currentMean = acc.lastMean
+            acc.currentVariance = acc.lastVariance
+            acc.sn = acc.lastSn
+            NormalStrategyResult(currentValue, acc.currentMean, stdDev, isAnomaly = true)
         }
     }
 
     override fun merge(
-            acc0: Tuple7<Double, Double, Double, Double, Double, Double, Long>,
-            acc1: Tuple7<Double, Double, Double, Double, Double, Double, Long>
+            acc0: NormalStrategyAccumulator,
+            acc1: NormalStrategyAccumulator
     )
-            : Tuple7<Double, Double, Double, Double, Double, Double, Long> {
-        return Tuple7<Double, Double, Double, Double, Double, Double, Long>(
-                acc1.f0, acc1.f1, acc1.f2, acc1.f3,
-                acc1.f4, acc1.f5, acc1.f6 + 1L
+            : NormalStrategyAccumulator {
+        return NormalStrategyAccumulator(
+                acc1.lastMean, acc1.currentMean, acc1.lastVariance, acc1.currentVariance,
+                acc1.lastSn, acc1.sn, acc1.count + 1L
         )
     }
 }
