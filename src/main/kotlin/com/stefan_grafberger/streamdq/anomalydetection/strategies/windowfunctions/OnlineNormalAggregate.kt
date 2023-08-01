@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.dto.NormalStrategyResultDto
+import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple7
@@ -22,7 +22,7 @@ class OnlineNormalAggregate(
         private val upperDeviationFactor: Double? = 3.0,
 ) : AggregateFunction<AggregateConstraintResult,
         Tuple7<Double, Double, Double, Double, Double, Double, Long>,
-        NormalStrategyResultDto> {
+        NormalStrategyResult> {
 
     private var currentValue = 0.0
 
@@ -64,19 +64,19 @@ class OnlineNormalAggregate(
         )
     }
 
-    override fun getResult(acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>): NormalStrategyResultDto {
+    override fun getResult(acc: Tuple7<Double, Double, Double, Double, Double, Double, Long>): NormalStrategyResult {
         val stdDev = sqrt(acc.f3)
         val upperBound = acc.f1 + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
         val lowerBound = acc.f1 - (lowerDeviationFactor ?: Double.MAX_VALUE) * stdDev
 
         return if (currentValue in lowerBound..upperBound) {
-            NormalStrategyResultDto(currentValue, acc.f1, stdDev, isAnomaly = false)
+            NormalStrategyResult(currentValue, acc.f1, stdDev, isAnomaly = false)
         } else {
             // AnomalyCheckResult won't affect mean and variance
             acc.f1 = acc.f0
             acc.f3 = acc.f2
             acc.f5 = acc.f4
-            NormalStrategyResultDto(currentValue, acc.f1, stdDev, isAnomaly = true)
+            NormalStrategyResult(currentValue, acc.f1, stdDev, isAnomaly = true)
         }
     }
 

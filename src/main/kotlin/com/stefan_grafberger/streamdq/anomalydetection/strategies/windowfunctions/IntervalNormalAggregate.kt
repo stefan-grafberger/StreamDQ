@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.dto.NormalStrategyResultDto
+import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 import org.apache.flink.api.java.tuple.Tuple3
@@ -13,7 +13,7 @@ class IntervalNormalAggregate(
         private val upperDeviationFactor: Double? = 3.0,
         private val includeInterval: Boolean = false,
         private val waterMarkInterval: Pair<Long, Long>?)
-    : AggregateFunction<AggregateConstraintResult, Tuple3<Double, Double, Long>, NormalStrategyResultDto> {
+    : AggregateFunction<AggregateConstraintResult, Tuple3<Double, Double, Long>, NormalStrategyResult> {
 
     private var currentValue = 0.0
     private var currentTimeStamp = 0L
@@ -60,7 +60,7 @@ class IntervalNormalAggregate(
      * need to investigate how to only get mean and stdDev
      * of the last element in the accumulator
      */
-    override fun getResult(acc: Tuple3<Double, Double, Long>): NormalStrategyResultDto {
+    override fun getResult(acc: Tuple3<Double, Double, Long>): NormalStrategyResult {
         val mean = acc.f0
         val stdDev = sqrt(acc.f1)
         val upperBound = mean + (upperDeviationFactor ?: Double.MAX_VALUE) * stdDev
@@ -68,16 +68,16 @@ class IntervalNormalAggregate(
 
         if (waterMarkInterval == null) {
             if (currentValue !in lowerBound..upperBound) {
-                return NormalStrategyResultDto(currentValue, mean, stdDev)
+                return NormalStrategyResult(currentValue, mean, stdDev)
             }
         } else {
             val (startInterval, endInterval) = waterMarkInterval
             if (currentValue !in lowerBound..upperBound && currentTimeStamp in startInterval..endInterval) {
-                return NormalStrategyResultDto(currentValue, mean, stdDev)
+                return NormalStrategyResult(currentValue, mean, stdDev)
             }
         }
 
-        return NormalStrategyResultDto(currentValue, mean, stdDev)
+        return NormalStrategyResult(currentValue, mean, stdDev)
     }
 
     override fun merge(acc0: Tuple3<Double, Double, Long>, acc1: Tuple3<Double, Double, Long>): Tuple3<Double, Double, Long> {
