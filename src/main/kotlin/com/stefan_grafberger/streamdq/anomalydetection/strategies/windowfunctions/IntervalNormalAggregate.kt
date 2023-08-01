@@ -56,10 +56,6 @@ class IntervalNormalAggregate(
         return Tuple3<Double, Double, Long>(acc.f0, acc.f1, acc.f2 + 1L)
     }
 
-    /**
-     * need to investigate how to only get mean and stdDev
-     * of the last element in the accumulator
-     */
     override fun getResult(acc: Tuple3<Double, Double, Long>): NormalStrategyResult {
         val mean = acc.f0
         val stdDev = sqrt(acc.f1)
