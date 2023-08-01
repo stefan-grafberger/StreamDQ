@@ -13,8 +13,6 @@ import org.apache.flink.api.common.functions.MapFunction
  *
  * @param lowerBound Upper bound of element value in the stream
  * @param upperBound Upper bound of element value in the stream
- *
- * @since 1.0
  */
 class BoundMapFunction(
         private val lowerBound: Double,

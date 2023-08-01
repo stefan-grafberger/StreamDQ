@@ -16,7 +16,6 @@ import kotlin.math.sqrt
  * [com.stefan_grafberger.streamdq.anomalydetection.strategies.impl.OnlineNormalStrategy]
  *
  * @see <a href="https://fanf2.user.srcf.net/hermes/doc/antiforgery/stats.pdf">Incremental calculation of variance</a>
- * @since 1.0
  */
 class OnlineNormalAggregate(
         private val lowerDeviationFactor: Double? = 3.0,

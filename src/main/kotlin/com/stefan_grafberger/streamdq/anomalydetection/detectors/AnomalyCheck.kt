@@ -11,8 +11,6 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow
  * [com.stefan_grafberger.streamdq.VerificationSuite]
  *
  * @Override by [com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector]
- *
- * @since 1.0
  */
 interface AnomalyCheck {
     fun build(): AnomalyDetector

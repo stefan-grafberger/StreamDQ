@@ -11,8 +11,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
  * if needed
  *
  * @Override by [com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector]
- *
- * @since 1.0
  */
 interface AnomalyDetector {
     fun <IN> detectAnomalyStream(dataStream: DataStream<IN>): SingleOutputStreamOperator<AnomalyCheckResult>
