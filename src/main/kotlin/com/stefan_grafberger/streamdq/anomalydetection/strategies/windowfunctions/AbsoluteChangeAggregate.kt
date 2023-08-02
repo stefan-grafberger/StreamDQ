@@ -1,9 +1,9 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
+import com.stefan_grafberger.streamdq.anomalydetection.model.AbsoluteChangeAccumulator
 import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
-import org.apache.flink.api.java.tuple.Tuple4
 
 /**
  * AbsoluteChangeAggregate function is used to detect anomalies
@@ -24,7 +24,7 @@ class AbsoluteChangeAggregate(
         private val maxRateIncrease: Double = Double.MAX_VALUE,
         private val order: Int = 1
 ) : AggregateFunction<AggregateConstraintResult,
-        Tuple4<Double, MutableList<Double>, Double, Long>,
+        AbsoluteChangeAccumulator,
         AnomalyCheckResult> {
 
     private var currentValue = 0.0
@@ -36,52 +36,52 @@ class AbsoluteChangeAggregate(
      * the list contains the last value of Order n(order integer) to order 1
      * the first order elements will be none anomaly since we can not determine
      */
-    override fun createAccumulator(): Tuple4<Double, MutableList<Double>, Double, Long> {
-        return Tuple4(0.0, mutableListOf(), 0.0, 0L)
+    override fun createAccumulator(): AbsoluteChangeAccumulator {
+        return AbsoluteChangeAccumulator(0.0, mutableListOf(), 0.0, 0L)
     }
 
     override fun add(
             aggregateConstraintResult: AggregateConstraintResult,
-            acc: Tuple4<Double, MutableList<Double>, Double, Long>
+            acc: AbsoluteChangeAccumulator
     )
-            : Tuple4<Double, MutableList<Double>, Double, Long> {
+            : AbsoluteChangeAccumulator {
 
         currentValue = aggregateConstraintResult.aggregate!!
-        if (acc.f3 < order) {
+        if (acc.count < order) {
             preOrderList.add(currentValue)
         } else {
-            if (acc.f3?.toInt() == order) acc.f1.addAll(initializeBeforeDetect(preOrderList, order))
+            if (acc.count?.toInt() == order) acc.lastElementOfEachOrderList.addAll(initializeBeforeDetect(preOrderList, order))
             val lastElementOfEachOrderList: MutableList<Double> = mutableListOf()
             var currentOrderChange = currentValue
             for (i in 0 until order) {
                 lastElementOfEachOrderList.add(currentOrderChange)
-                currentOrderChange -= acc.f1.elementAt(i)
+                currentOrderChange -= acc.lastElementOfEachOrderList.elementAt(i)
             }
-            acc.f2 = lastElementOfEachOrderList.last() - acc.f1.last()
-            acc.f1 = lastElementOfEachOrderList
+            acc.currentChangeRate = lastElementOfEachOrderList.last() - acc.lastElementOfEachOrderList.last()
+            acc.lastElementOfEachOrderList = lastElementOfEachOrderList
         }
-        acc.f0 = currentValue
-        acc.f3 += 1L
-        return Tuple4(acc.f0, acc.f1, acc.f2, acc.f3)
+        acc.currentValue = currentValue
+        acc.count += 1L
+        return AbsoluteChangeAccumulator(acc.currentValue, acc.lastElementOfEachOrderList, acc.currentChangeRate, acc.count)
     }
 
-    override fun getResult(acc: Tuple4<Double, MutableList<Double>, Double, Long>): AnomalyCheckResult {
-        val currentChangeRate = acc.f2
-        if (acc.f3 > order && currentChangeRate !in maxRateDecrease..maxRateIncrease) {
-            return AnomalyCheckResult(acc.f0, true)
+    override fun getResult(acc: AbsoluteChangeAccumulator): AnomalyCheckResult {
+        val currentChangeRate = acc.currentChangeRate
+        if (acc.count > order && currentChangeRate !in maxRateDecrease..maxRateIncrease) {
+            return AnomalyCheckResult(acc.currentValue, true)
         }
-        return AnomalyCheckResult(acc.f0, false)
+        return AnomalyCheckResult(acc.currentValue, false)
     }
 
     override fun merge(
-            acc0: Tuple4<Double, MutableList<Double>, Double, Long>,
-            acc1: Tuple4<Double, MutableList<Double>, Double, Long>
-    ): Tuple4<Double, MutableList<Double>, Double, Long> {
-        return Tuple4(
-                acc0.f0 + acc1.f0,
-                (acc0.f1 + acc1.f1).toMutableList(),
-                acc0.f2 + acc1.f2,
-                acc0.f3 + acc1.f3
+            acc0: AbsoluteChangeAccumulator,
+            acc1: AbsoluteChangeAccumulator
+    ): AbsoluteChangeAccumulator {
+        return AbsoluteChangeAccumulator(
+                acc0.currentValue + acc1.currentValue,
+                (acc0.lastElementOfEachOrderList + acc1.lastElementOfEachOrderList).toMutableList(),
+                acc0.currentChangeRate + acc1.currentChangeRate,
+                acc0.count + acc1.count
         )
     }
 
