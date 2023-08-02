@@ -1,4 +1,4 @@
-package com.stefan_grafberger.streamdq.anomalydetection.model
+package com.stefan_grafberger.streamdq.anomalydetection.model.accumulator
 
 data class AbsoluteChangeAccumulator(
         var currentValue: Double,

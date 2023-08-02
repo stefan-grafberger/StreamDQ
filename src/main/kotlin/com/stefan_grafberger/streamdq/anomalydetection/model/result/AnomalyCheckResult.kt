@@ -1,4 +1,4 @@
-package com.stefan_grafberger.streamdq.anomalydetection.model
+package com.stefan_grafberger.streamdq.anomalydetection.model.result
 
 data class AnomalyCheckResult(
         val value: Double?,

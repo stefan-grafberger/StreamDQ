@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyAccumulator
-import com.stefan_grafberger.streamdq.anomalydetection.model.NormalStrategyResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.accumulator.NormalStrategyAccumulator
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.NormalStrategyResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 import kotlin.math.sqrt

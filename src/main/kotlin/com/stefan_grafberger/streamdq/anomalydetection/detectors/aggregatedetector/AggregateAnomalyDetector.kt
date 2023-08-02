@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
-import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.anomalydetection.strategies.AnomalyDetectionStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateConstraint
 import org.apache.flink.streaming.api.datastream.DataStream

@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.windowfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.RelativeChangeAccumulator
-import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.accumulator.RelativeChangeAccumulator
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateConstraintResult
 import org.apache.flink.api.common.functions.AggregateFunction
 

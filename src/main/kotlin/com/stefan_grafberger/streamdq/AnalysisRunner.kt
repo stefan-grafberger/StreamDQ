@@ -1,7 +1,7 @@
 package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
-import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck

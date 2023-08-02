@@ -1,6 +1,6 @@
 package com.stefan_grafberger.streamdq.anomalydetection.strategies.mapfunctions
 
-import com.stefan_grafberger.streamdq.anomalydetection.model.AnomalyCheckResult
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.AnomalyCheckResult
 import org.apache.flink.api.common.functions.MapFunction
 
 /**
