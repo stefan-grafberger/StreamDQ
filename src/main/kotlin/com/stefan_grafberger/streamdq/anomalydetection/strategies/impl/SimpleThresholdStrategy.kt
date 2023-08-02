@@ -26,7 +26,7 @@ data class SimpleThresholdStrategy(
         val (startTimeStamp, endTimeStamp) = Pair(Long.MIN_VALUE, Long.MAX_VALUE)
         return dataStream
                 .filter { data -> data.timestamp in startTimeStamp..endTimeStamp }
-                .map { data -> AnomalyCheckResult(data.aggregate, false, confidence = 1.0) }
+                .map { data -> AnomalyCheckResult(data.aggregate, false) }
                 .returns(AnomalyCheckResult::class.java)
                 .map(BoundMapFunction(lowerBound, upperBound))
                 .returns(AnomalyCheckResult::class.java)

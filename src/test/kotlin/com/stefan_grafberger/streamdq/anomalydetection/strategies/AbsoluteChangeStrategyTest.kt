@@ -34,7 +34,7 @@ class AbsoluteChangeStrategyTest {
         //given
         strategy = AbsoluteChangeStrategy(-2.0, 2.0, strategyWindowAssigner = GlobalWindows.create())
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResultForAbsolute()
-        val expectedAnomalies = dataSeriesList.slice(20..31).map { value -> AnomalyCheckResult(value, true, 1.0) }
+        val expectedAnomalies = dataSeriesList.slice(20..31).map { value -> AnomalyCheckResult(value, true) }
         //when
         val actualAnomalyStream = strategy
                 .detect(aggregateResultStream.second)
@@ -58,8 +58,8 @@ class AbsoluteChangeStrategyTest {
                 .map { value -> AggregateConstraintResult(true, value, "test") }
                 .returns(AggregateConstraintResult::class.java)
         val expectedAnomalies = mutableListOf(
-                AnomalyCheckResult(18.0, true, 1.0),
-                AnomalyCheckResult(72.0, true, 1.0))
+                AnomalyCheckResult(18.0, true),
+                AnomalyCheckResult(72.0, true))
         //when
         val actualAnomalyStream = strategy
                 .detect(aggregateResultStream)

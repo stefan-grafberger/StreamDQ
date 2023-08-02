@@ -68,9 +68,9 @@ class AbsoluteChangeAggregate(
     override fun getResult(acc: Tuple4<Double, MutableList<Double>, Double, Long>): AnomalyCheckResult {
         val currentChangeRate = acc.f2
         if (acc.f3 > order && currentChangeRate !in maxRateDecrease..maxRateIncrease) {
-            return AnomalyCheckResult(acc.f0, true, 1.0)
+            return AnomalyCheckResult(acc.f0, true)
         }
-        return AnomalyCheckResult(acc.f0, false, 1.0)
+        return AnomalyCheckResult(acc.f0, false)
     }
 
     override fun merge(

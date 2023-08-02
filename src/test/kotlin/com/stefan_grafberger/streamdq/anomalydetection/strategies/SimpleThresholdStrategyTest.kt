@@ -34,7 +34,7 @@ class SimpleThresholdStrategyTest {
         }
         strategy = SimpleThresholdStrategy(upperBound = 1.0)
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
-        val expectedAnomalies = newDataSeries.filter { value -> value > 1.0 }.map { value -> AnomalyCheckResult(value, true, 1.0) }
+        val expectedAnomalies = newDataSeries.filter { value -> value > 1.0 }.map { value -> AnomalyCheckResult(value, true) }
         //when
         val actualAnomalyStream = strategy
                 .detect(aggregateResultStream.second)

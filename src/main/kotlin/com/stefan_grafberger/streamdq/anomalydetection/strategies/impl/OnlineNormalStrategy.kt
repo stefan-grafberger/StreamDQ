@@ -42,7 +42,7 @@ data class OnlineNormalStrategy<W : Window>(
                 .windowAll(strategyWindowAssigner)
                 .trigger(CountTrigger.of(1))
                 .aggregate(OnlineNormalAggregate(lowerDeviationFactor, upperDeviationFactor))
-                .map { data -> AnomalyCheckResult(data.value, data.isAnomaly, 1.0) }
+                .map { data -> AnomalyCheckResult(data.value, data.isAnomaly) }
                 .returns(AnomalyCheckResult::class.java)
     }
 }

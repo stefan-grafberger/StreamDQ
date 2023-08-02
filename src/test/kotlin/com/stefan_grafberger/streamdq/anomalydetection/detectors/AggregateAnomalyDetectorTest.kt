@@ -24,8 +24,8 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(DetectionStrategy().onlineNormal(1.0, 1.0))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
+                Pair(2, AnomalyCheckResult(0.0046, true)),
+                Pair(3, AnomalyCheckResult(1.0, true))).map { element -> element.second }
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(rawStream)
@@ -45,9 +45,9 @@ class AggregateAnomalyDetectorTest {
                 .withStrategy(DetectionStrategy().threshold(0.26, 0.9))
                 .build()
         val expectedAnomalies = mutableListOf(
-                Pair(1, AnomalyCheckResult(0.25, true, 1.0)),
-                Pair(2, AnomalyCheckResult(0.0046, true, 1.0)),
-                Pair(3, AnomalyCheckResult(1.0, true, 1.0))).map { element -> element.second }
+                Pair(1, AnomalyCheckResult(0.25, true)),
+                Pair(2, AnomalyCheckResult(0.0046, true)),
+                Pair(3, AnomalyCheckResult(1.0, true))).map { element -> element.second }
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(rawStream)
@@ -66,8 +66,8 @@ class AggregateAnomalyDetectorTest {
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(DetectionStrategy().absoluteChange(-0.1, 0.9, 1))
                 .build()
-        val expectedAnomalies = mutableListOf(AnomalyCheckResult(0.0046, true, 1.0),
-                AnomalyCheckResult(1.0, true, 1.0))
+        val expectedAnomalies = mutableListOf(AnomalyCheckResult(0.0046, true),
+                AnomalyCheckResult(1.0, true))
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(rawStream)
@@ -86,8 +86,8 @@ class AggregateAnomalyDetectorTest {
                 .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                 .withStrategy(DetectionStrategy().relativeRateOfChange(0.02, 3.0, 2))
                 .build()
-        val expectedAnomalies = mutableListOf(AnomalyCheckResult(0.0046, true, 1.0),
-                AnomalyCheckResult(1.0, true, 1.0))
+        val expectedAnomalies = mutableListOf(AnomalyCheckResult(0.0046, true),
+                AnomalyCheckResult(1.0, true))
         //when
         val actualAnomalies = detector
                 .detectAnomalyStream(rawStream)

@@ -32,13 +32,13 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(null, 1.5, strategyWindowAssigner = GlobalWindows.create())
         val (env, aggregateResultStream) = TestDataUtils.createEnvAndGetAggregateResult()
         val expectedAnomalies = MutableList(6) {
-            AnomalyCheckResult(dataSeriesList[it * 2 + 20], true, 1.0)
+            AnomalyCheckResult(dataSeriesList[it * 2 + 20], true)
         }
         //when
         val actualAnomalies = strategy
-            .detect(aggregateResultStream)
-            .filter { result -> result.isAnomaly == true }
-            .executeAndCollect().asSequence().toList().slice(5..10)
+                .detect(aggregateResultStream)
+                .filter { result -> result.isAnomaly == true }
+                .executeAndCollect().asSequence().toList().slice(5..10)
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -49,13 +49,13 @@ class OnlineNormalStrategyTest {
         strategy = OnlineNormalStrategy(1.5, null, strategyWindowAssigner = GlobalWindows.create())
         val (env, aggregateResultStream) = TestDataUtils.createEnvAndGetAggregateResult()
         val expectedAnomalies = MutableList(5) {
-            AnomalyCheckResult(dataSeriesList[it * 2 + 21], true, 1.0)
+            AnomalyCheckResult(dataSeriesList[it * 2 + 21], true)
         }
         //when
         val actualAnomalies = strategy
-            .detect(aggregateResultStream)
-            .filter { result -> result.isAnomaly == true }
-            .executeAndCollect().asSequence().toList()
+                .detect(aggregateResultStream)
+                .filter { result -> result.isAnomaly == true }
+                .executeAndCollect().asSequence().toList()
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }
@@ -67,9 +67,9 @@ class OnlineNormalStrategyTest {
         val (env, aggregateResultStream) = TestDataUtils.createEnvAndGetAggregateResult()
         //when
         val actualAnomalies = strategy
-            .detect(aggregateResultStream)
-            .filter { result -> result.isAnomaly == true }
-            .executeAndCollect().asSequence().toList()
+                .detect(aggregateResultStream)
+                .filter { result -> result.isAnomaly == true }
+                .executeAndCollect().asSequence().toList()
         //then
         assertTrue(actualAnomalies.isEmpty())
     }
@@ -78,14 +78,14 @@ class OnlineNormalStrategyTest {
     fun testCreateOnlineNormalStrategyWhenDeviationFactorIsNegativeExpectIllegalArgumentExceptionException() {
         //then
         assertFailsWith(exceptionClass = IllegalArgumentException::class,
-            message = "Factors cannot be smaller than zero.",
-            //when
-            block = { strategy = OnlineNormalStrategy(null, -3.0) }
+                message = "Factors cannot be smaller than zero.",
+                //when
+                block = { strategy = OnlineNormalStrategy(null, -3.0) }
         )
         assertFailsWith(exceptionClass = IllegalArgumentException::class,
-            message = "Factors cannot be smaller than zero.",
-            //when
-            block = { strategy = OnlineNormalStrategy(-3.0, null) }
+                message = "Factors cannot be smaller than zero.",
+                //when
+                block = { strategy = OnlineNormalStrategy(-3.0, null) }
         )
     }
 
@@ -93,18 +93,18 @@ class OnlineNormalStrategyTest {
     fun testDetectOnStreamWhenDataStreamComeExpectAnomalyStreamDetected() {
         //given
         strategy =
-            OnlineNormalStrategy(3.5, 3.5, strategyWindowAssigner = GlobalWindows.create())
+                OnlineNormalStrategy(3.5, 3.5, strategyWindowAssigner = GlobalWindows.create())
         val aggregateResultStream = TestDataUtils.createEnvAndGetAggregateResult()
         StreamExecutionEnvironment.createLocalEnvironment(TestUtils.LOCAL_PARALLELISM)
         val expectedAnomalies =
-            dataSeriesList.slice(20..30).map { value -> AnomalyCheckResult(value, true, 1.0) }
+                dataSeriesList.slice(20..30).map { value -> AnomalyCheckResult(value, true) }
         //when
         val actualAnomalyStream = strategy
-            .detect(aggregateResultStream.second)
-            .filter { result -> result.isAnomaly == true }
+                .detect(aggregateResultStream.second)
+                .filter { result -> result.isAnomaly == true }
         val actualAnomalies = actualAnomalyStream.executeAndCollect()
-            .asSequence()
-            .toList()
+                .asSequence()
+                .toList()
         //then
         assertEquals(expectedAnomalies, actualAnomalies)
     }

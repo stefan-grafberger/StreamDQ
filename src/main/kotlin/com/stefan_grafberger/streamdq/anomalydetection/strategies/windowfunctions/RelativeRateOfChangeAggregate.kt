@@ -50,9 +50,9 @@ class RelativeRateOfChangeAggregate(
     override fun getResult(acc: Tuple4<Double, ArrayDeque<Double>, Double, Long>): AnomalyCheckResult {
         val currentRelativeChangeRate = acc.f2
         if (acc.f3 > order && currentRelativeChangeRate !in maxRateDecrease..maxRateIncrease) {
-            return AnomalyCheckResult(acc.f0, true, 1.0)
+            return AnomalyCheckResult(acc.f0, true)
         }
-        return AnomalyCheckResult(acc.f0, false, 1.0)
+        return AnomalyCheckResult(acc.f0, false)
     }
 
     override fun merge(acc0: Tuple4<Double, ArrayDeque<Double>, Double, Long>, acc1: Tuple4<Double, ArrayDeque<Double>, Double, Long>): Tuple4<Double, ArrayDeque<Double>, Double, Long> {

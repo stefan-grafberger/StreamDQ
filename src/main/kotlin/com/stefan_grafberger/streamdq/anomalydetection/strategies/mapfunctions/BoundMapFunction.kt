@@ -20,9 +20,9 @@ class BoundMapFunction(
 ) : MapFunction<AnomalyCheckResult, AnomalyCheckResult> {
     override fun map(element: AnomalyCheckResult): AnomalyCheckResult {
         return if (element.value!! !in lowerBound..upperBound) {
-            AnomalyCheckResult(element.value, true, element.confidence, element.detail)
+            AnomalyCheckResult(element.value, true, element.detail)
         } else {
-            AnomalyCheckResult(element.value, false, element.confidence, element.detail)
+            AnomalyCheckResult(element.value, false, element.detail)
         }
     }
 }
