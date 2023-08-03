@@ -27,7 +27,7 @@
     <assertj.version>3.11.1</assertj.version>
     <sortpom-maven-plugin.version>3.0.0</sortpom-maven-plugin.version>
     <!-- Kotlin -->
-    <kotlin.version>1.4.32</kotlin.version>
+    <kotlin.version>1.6.0</kotlin.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
   </properties>
 
