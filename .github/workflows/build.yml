@@ -1,6 +1,6 @@
-name: Java CI
+name: StreamDQ CI
 
-on: [push]
+on: [ push ]
 
 jobs:
   build:

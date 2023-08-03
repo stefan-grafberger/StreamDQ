@@ -1,5 +1,24 @@
+/**
+ * Licensed to the University of Amsterdam (UvA) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The UvA licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.stefan_grafberger.streamdq
 
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.AnomalyDetector
+import com.stefan_grafberger.streamdq.anomalydetection.model.result.AnomalyCheckResult
 import com.stefan_grafberger.streamdq.checks.AggregateCheckResult
 import com.stefan_grafberger.streamdq.checks.RowLevelCheckResult
 import com.stefan_grafberger.streamdq.checks.aggregate.InternalAggregateCheck
@@ -17,10 +36,11 @@ import org.apache.flink.streaming.api.datastream.KeyedStream
 class AnalysisRunner {
 
     fun <IN> addChecksToStream(
-        stream: DataStream<IN>,
-        rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
-        continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
-        config: ExecutionConfig?
+            stream: DataStream<IN>,
+            rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
+            continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
+            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
+            config: ExecutionConfig?
     ): VerificationResult<IN, Any> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
         val streamObjectTypeInfo: TypeInformation<IN> = stream.type
@@ -28,25 +48,33 @@ class AnalysisRunner {
         val rowLevelResultMap = buildRowLevelResultMap(stream, uniqueRowLevelChecks, streamObjectTypeInfo, config)
 
         val aggregateResultMap = buildAndAddAggResultStreams(
-            stream,
-            continuousChecksWithPotentialDuplicates,
-            streamObjectTypeInfo,
-            config
+                stream,
+                continuousChecksWithPotentialDuplicates,
+                streamObjectTypeInfo,
+                config
         )
 
         val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
+
+        val anomalyDetectionsResultMap = buildAndAddAnomalyDetectionResultStreams(
+                stream,
+                anomalyDetectionsWithPotentialDuplicates
+        )
+
         return VerificationResult(
-            rowLevelResultMap,
-            aggregateResultMap,
-            rowLevelCheckIndexMap
+                rowLevelResultMap,
+                aggregateResultMap,
+                rowLevelCheckIndexMap,
+                anomalyDetectionsResultMap
         )
     }
 
     fun <IN, KEY> addChecksToStream(
-        stream: KeyedStream<IN, KEY>,
-        rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
-        continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
-        config: ExecutionConfig?
+            stream: KeyedStream<IN, KEY>,
+            rowLevelChecksWithPotentialDuplicates: List<RowLevelCheck>,
+            continuousChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
+            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>,
+            config: ExecutionConfig?
     ): VerificationResult<IN, KEY> {
         val uniqueRowLevelChecks = rowLevelChecksWithPotentialDuplicates.toSet().toList()
         val streamObjectTypeInfo: TypeInformation<IN> = stream.type
@@ -54,25 +82,32 @@ class AnalysisRunner {
         val rowLevelResultMap = buildRowLevelResultMap(stream, uniqueRowLevelChecks, streamObjectTypeInfo, config)
 
         val aggregateResultMap = buildAndAddAggResultStreams(
-            stream,
-            continuousChecksWithPotentialDuplicates,
-            streamObjectTypeInfo,
-            config
+                stream,
+                continuousChecksWithPotentialDuplicates,
+                streamObjectTypeInfo,
+                config
         )
 
         val rowLevelCheckIndexMap = uniqueRowLevelChecks.mapIndexed { index, check -> check to (index + 1) }.toMap()
+
+        val anomalyDetectionsResultMap = buildAndAddAnomalyDetectionResultStreams(
+            stream,
+            anomalyDetectionsWithPotentialDuplicates
+        )
+
         return VerificationResult(
-            rowLevelResultMap,
-            aggregateResultMap,
-            rowLevelCheckIndexMap
+                rowLevelResultMap,
+                aggregateResultMap,
+                rowLevelCheckIndexMap,
+                anomalyDetectionsResultMap
         )
     }
 
     private fun <IN, KEY> buildAndAddAggResultStreams(
-        baseStream: KeyedStream<IN, KEY>,
-        windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
-        streamObjectTypeInfo: TypeInformation<IN>,
-        config: ExecutionConfig?
+            baseStream: KeyedStream<IN, KEY>,
+            windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
+            streamObjectTypeInfo: TypeInformation<IN>,
+            config: ExecutionConfig?
     ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>> {
         val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult<KEY>>> = mutableMapOf()
         val uniqueContinuousAggChecks = windowChecksWithPotentialDuplicates.toSet().toList()
@@ -106,10 +141,10 @@ class AnalysisRunner {
     }
 
     private fun <IN> buildAndAddAggResultStreams(
-        baseStream: DataStream<IN>,
-        windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
-        streamObjectTypeInfo: TypeInformation<IN>,
-        config: ExecutionConfig?
+            baseStream: DataStream<IN>,
+            windowChecksWithPotentialDuplicates: List<InternalAggregateCheck>,
+            streamObjectTypeInfo: TypeInformation<IN>,
+            config: ExecutionConfig?
     ): Map<InternalAggregateCheck, DataStream<AggregateCheckResult<Any>>> {
         val aggregateResultMap: MutableMap<InternalAggregateCheck, DataStream<AggregateCheckResult<Any>>> = mutableMapOf()
         val uniqueContinuousAggChecks = windowChecksWithPotentialDuplicates.toSet().toList()
@@ -127,10 +162,10 @@ class AnalysisRunner {
     }
 
     private fun <IN> buildRowLevelResultMap(
-        baseStream: DataStream<IN>,
-        uniqueRowLevelChecks: List<RowLevelCheck>,
-        streamObjectTypeInfo: TypeInformation<IN>,
-        config: ExecutionConfig?
+            baseStream: DataStream<IN>,
+            uniqueRowLevelChecks: List<RowLevelCheck>,
+            streamObjectTypeInfo: TypeInformation<IN>,
+            config: ExecutionConfig?
     ): Map<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>> {
         val rowLevelResultMap: MutableMap<RowLevelCheck, DataStream<RowLevelCheckResult<IN>>> = mutableMapOf()
         for (rowLevelCheck in uniqueRowLevelChecks) {
@@ -141,7 +176,19 @@ class AnalysisRunner {
             val rowLevelCheckResultStream = baseStream.map(functionWrapper)
             rowLevelResultMap[rowLevelCheck] = rowLevelCheckResultStream
         }
-
         return rowLevelResultMap
+    }
+
+    private fun <IN> buildAndAddAnomalyDetectionResultStreams(
+            baseStream: DataStream<IN>,
+            anomalyDetectionsWithPotentialDuplicates: List<AnomalyDetector>
+    ): Map<AnomalyDetector, DataStream<AnomalyCheckResult>> {
+        val anomalyDetectionsResultMap: MutableMap<AnomalyDetector, DataStream<AnomalyCheckResult>> = mutableMapOf()
+        val uniqueAnomalyDetections = anomalyDetectionsWithPotentialDuplicates.distinct()
+        for (detector in uniqueAnomalyDetections) {
+            val resultStream = detector.detectAnomalyStream(baseStream)
+            anomalyDetectionsResultMap[detector] = resultStream
+        }
+        return anomalyDetectionsResultMap
     }
 }

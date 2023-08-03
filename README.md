@@ -23,8 +23,11 @@ Prerequisite: Java 11, Maven
 ## How to use StreamDQ
 ```kotlin 
 import com.stefan_grafberger.streamdq.VerificationSuite
+import com.stefan_grafberger.streamdq.anomalydetection.detectors.aggregatedetector.AggregateAnomalyCheck
+import com.stefan_grafberger.streamdq.anomalydetection.strategies.DetectionStrategy
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
 import com.stefan_grafberger.streamdq.checks.row.RowLevelCheck
+import com.stefan_grafberger.streamdq.VerificationSuite
 
 val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(LOCAL_PARALLELISM)
 env.streamTimeCharacteristic = TimeCharacteristic.EventTime
@@ -46,6 +49,11 @@ val verificationResult = VerificationSuite()
     .addAggregateCheck(AggregateCheck()
         .onContinuousStreamWithTrigger(CountTrigger.of(100))
         .hasApproxCountDistinctBetween("productName", 5_000_000, 10_000_000))
+    .addAnomalyCheck(AggregateAnomalyCheck()
+        .onCompleteness("productId")
+        .withWindow(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+        .withStrategy(DetectionStrategy().onlineNormal(0.1, 1.0))
+        .build())
     .build()                
 ```
 

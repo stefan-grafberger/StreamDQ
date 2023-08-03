@@ -1,3 +1,20 @@
+/**
+ * Licensed to the University of Amsterdam (UvA) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The UvA licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.stefan_grafberger.streamdq
 
 import com.stefan_grafberger.streamdq.checks.aggregate.AggregateCheck
@@ -27,7 +44,7 @@ class AnalysisRunnerTest {
             listOf(ClickType.TypeA, ClickType.TypeB)
         )
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), env.config)
+            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), listOf(), env.config)
 
         val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
 
@@ -44,7 +61,7 @@ class AnalysisRunnerTest {
         val rowLevelCheck = RowLevelCheck()
             .isContainedIn("nestedInfo.nestedStringValue", listOf("a", "c", "d"))
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), env.config)
+            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), listOf(), env.config)
 
         val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
 
@@ -62,7 +79,7 @@ class AnalysisRunnerTest {
             .isContainedIn("categoryValue", listOf(ClickType.TypeA, ClickType.TypeB))
             .isContainedIn("nestedInfo.nestedStringValue", listOf("a", "c", "d"))
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), env.config)
+            .addChecksToStream(rawStream, listOf(rowLevelCheck), listOf(), listOf(), env.config)
 
         val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
 
@@ -85,7 +102,7 @@ class AnalysisRunnerTest {
             .hasApproxCountDistinctBetween("userId", 4)
             .hasApproxCountDistinctBetween("nestedInfo.nestedStringValue", null, 3)
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(rawStream, listOf(), listOf(aggregateCheck), env.config)
+            .addChecksToStream(rawStream, listOf(), listOf(aggregateCheck), listOf(), env.config)
 
         val result = TestUtils.collectAggregateResultStreamAndAssertLen(verificationResult, aggregateCheck, 3)
 
@@ -122,7 +139,7 @@ class AnalysisRunnerTest {
                 .hasApproxQuantileBetween("nestedInfo.nestedDoubleValue", 0.9, null, 10.0)
         )
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(rawStream, rowLevelChecks, aggregateChecks, env.config)
+            .addChecksToStream(rawStream, rowLevelChecks, aggregateChecks, listOf(), env.config)
 
         val resultOne = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelChecks[0], 10)
         TestUtils.assertRowLevelConstraintResults(
@@ -186,7 +203,7 @@ class AnalysisRunnerTest {
                 .hasApproxQuantileBetween("nestedInfo.nestedDoubleValue", 0.9, null, 10.0)
         )
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(keyedRawStream, rowLevelChecks, aggregateChecks, env.config)
+            .addChecksToStream(keyedRawStream, rowLevelChecks, aggregateChecks, listOf(), env.config)
 
         val resultOne = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelChecks[0], 10)
         TestUtils.assertRowLevelConstraintResults(
@@ -252,7 +269,7 @@ class AnalysisRunnerTest {
                 .hasApproxQuantileBetween("nestedInfo.nestedDoubleValue", 0.9, null, 10.0)
         )
         val verificationResult = AnalysisRunner()
-            .addChecksToStream(keyedRawStream, rowLevelChecks, aggregateChecks, env.config)
+            .addChecksToStream(keyedRawStream, rowLevelChecks, aggregateChecks, listOf(), env.config)
 
         val resultOne = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelChecks[0], 10)
         TestUtils.assertRowLevelConstraintResults(
