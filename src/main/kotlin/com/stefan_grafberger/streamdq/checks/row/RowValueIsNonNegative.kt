@@ -57,7 +57,7 @@ class RowValueIsNonNegativeRowMapFunction<T>(
     override fun map(value: T): RowLevelConstraintResult {
         val fieldValue = this.fieldAccessor.get(value)
         val bigDecimalFieldValue = if (fieldValue is Number) {
-            BigDecimal.valueOf(fieldValue.toDouble())
+            fieldValue.toDouble().toBigDecimal()
         } else {
             throw NotImplementedError("TODO: Support more comparable types")
         }

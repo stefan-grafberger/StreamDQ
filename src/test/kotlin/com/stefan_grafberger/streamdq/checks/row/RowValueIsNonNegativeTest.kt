@@ -22,6 +22,7 @@ import com.stefan_grafberger.streamdq.VerificationSuite
 import com.stefan_grafberger.streamdq.data.TestDataUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.math.BigDecimal
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RowValueIsNonNegativeTest {
@@ -30,17 +31,40 @@ class RowValueIsNonNegativeTest {
         val (env, rawStream) = TestDataUtils.createEnvAndGetClickStream()
 
         val rowLevelCheck = RowLevelCheck()
-            .isNonNegative("timestamp")
+                .isNonNegative("timestamp")
         val verificationResult = VerificationSuite()
-            .onDataStream(rawStream, env.config)
-            .addRowLevelCheck(rowLevelCheck)
-            .build()
+                .onDataStream(rawStream, env.config)
+                .addRowLevelCheck(rowLevelCheck)
+                .build()
 
         val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
 
         TestUtils.assertRowLevelConstraintResults(
-            result, rowLevelCheck, 0,
-            arrayOf(true, true, true, true, true, true, true, true, true, true)
+                result, rowLevelCheck, 0,
+                arrayOf(true, true, true, true, true, true, true, true, true, true)
+        )
+
+    }
+
+    @Test
+    fun testMapWhenFieldValueIsDigDecimalExpectCastCorrect() {
+        //arrange
+        val (env, rawStream) = TestDataUtils.createEnvAndGetClickStream()
+        val rawBigDecimalTimestampStream = rawStream
+                .map { clickInfo -> clickInfo.timestamp.toBigDecimal() }
+                .returns(BigDecimal::class.java)
+        val rowLevelCheck = RowLevelCheck()
+                .isNonNegative("*")
+        //act
+        val verificationResult = VerificationSuite()
+                .onDataStream(rawBigDecimalTimestampStream, env.config)
+                .addRowLevelCheck(rowLevelCheck)
+                .build()
+        //assert
+        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
+        TestUtils.assertRowLevelConstraintResults(
+                result, rowLevelCheck, 0,
+                arrayOf(true, true, true, true, true, true, true, true, true, true)
         )
 
     }
