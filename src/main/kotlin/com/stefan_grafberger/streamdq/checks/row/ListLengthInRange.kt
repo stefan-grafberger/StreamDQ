@@ -62,7 +62,7 @@ class ListLengthInRangeRowMapFunction<T>(
         val listLength = if(fieldValue is Collection<*>) {
             fieldValue.size
         } else {
-            throw NotImplementedError("TODO: Support more comparable types")
+            throw NotImplementedError("Only Collections are supported for now")
         }
 
         val withinBounds = (expectedLowerBound == null || expectedLowerBound <= listLength) &&
