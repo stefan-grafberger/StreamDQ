@@ -49,7 +49,7 @@ class RowValueIsNonNegativeTest {
     }
 
     @Test
-    fun testMapWhenFieldValueIsBiggestDigDecimalExpectResultCorrect() {
+    fun testMapWhenFieldValueIsBigDecimalBiggerThanDoubleMaxValueExpectResultCorrect() {
         //arrange
         val bigDecimalList = listOf(BigDecimal(BigInteger.valueOf(Double.MAX_VALUE.toLong()), -2), BigDecimal.valueOf(0))
         val env = StreamExecutionEnvironment.createLocalEnvironment()
