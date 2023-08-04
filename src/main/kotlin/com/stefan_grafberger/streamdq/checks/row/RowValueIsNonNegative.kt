@@ -61,10 +61,6 @@ class RowValueIsNonNegativeRowMapFunction<T>(
                 fieldValue
             }
 
-            is Double -> {
-                fieldValue.toBigDecimal()
-            }
-
             is Number -> {
                 fieldValue.toDouble().toBigDecimal()
             }

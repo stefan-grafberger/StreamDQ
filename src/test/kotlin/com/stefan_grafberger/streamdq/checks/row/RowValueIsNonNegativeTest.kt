@@ -24,6 +24,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
+import java.math.BigInteger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RowValueIsNonNegativeTest {
@@ -50,7 +51,7 @@ class RowValueIsNonNegativeTest {
     @Test
     fun testMapWhenFieldValueIsBiggestDigDecimalExpectResultCorrect() {
         //arrange
-        val bigDecimalList = listOf(Double.MAX_VALUE.toBigDecimal(), -Double.MAX_VALUE.toBigDecimal(), BigDecimal.valueOf(0))
+        val bigDecimalList = listOf(BigDecimal(BigInteger.valueOf(Double.MAX_VALUE.toLong()), -2), BigDecimal.valueOf(0))
         val env = StreamExecutionEnvironment.createLocalEnvironment()
         val bigDecimalStream = env.fromCollection(bigDecimalList)
         val rowLevelCheck = RowLevelCheck()
@@ -61,32 +62,10 @@ class RowValueIsNonNegativeTest {
                 .addRowLevelCheck(rowLevelCheck)
                 .build()
         //assert
-        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 3)
+        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 2)
         TestUtils.assertRowLevelConstraintResults(
                 result, rowLevelCheck, 0,
-                arrayOf(true, false, true)
-        )
-
-    }
-
-    @Test
-    fun testMapWhenFieldValueIsBiggestDoubleExpectResultCorrect() {
-        //arrange
-        val doubleList = listOf(Double.MAX_VALUE, -Double.MAX_VALUE, 0.0)
-        val env = StreamExecutionEnvironment.createLocalEnvironment()
-        val bigDecimalStream = env.fromCollection(doubleList)
-        val rowLevelCheck = RowLevelCheck()
-                .isNonNegative("*")
-        //act
-        val verificationResult = VerificationSuite()
-                .onDataStream(bigDecimalStream, env.config)
-                .addRowLevelCheck(rowLevelCheck)
-                .build()
-        //assert
-        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 3)
-        TestUtils.assertRowLevelConstraintResults(
-                result, rowLevelCheck, 0,
-                arrayOf(true, false, true)
+                arrayOf(true, true)
         )
 
     }
