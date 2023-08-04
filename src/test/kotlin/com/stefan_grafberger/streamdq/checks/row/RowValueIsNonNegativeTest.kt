@@ -20,6 +20,7 @@ package com.stefan_grafberger.streamdq.checks.row
 import com.stefan_grafberger.streamdq.TestUtils
 import com.stefan_grafberger.streamdq.VerificationSuite
 import com.stefan_grafberger.streamdq.data.TestDataUtils
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
@@ -47,24 +48,45 @@ class RowValueIsNonNegativeTest {
     }
 
     @Test
-    fun testMapWhenFieldValueIsDigDecimalExpectCastCorrect() {
+    fun testMapWhenFieldValueIsBiggestDigDecimalExpectResultCorrect() {
         //arrange
-        val (env, rawStream) = TestDataUtils.createEnvAndGetClickStream()
-        val rawBigDecimalTimestampStream = rawStream
-                .map { clickInfo -> clickInfo.timestamp.toBigDecimal() }
-                .returns(BigDecimal::class.java)
+        val bigDecimalList = listOf(Double.MAX_VALUE.toBigDecimal(), -Double.MAX_VALUE.toBigDecimal(), BigDecimal.valueOf(0))
+        val env = StreamExecutionEnvironment.createLocalEnvironment()
+        val bigDecimalStream = env.fromCollection(bigDecimalList)
         val rowLevelCheck = RowLevelCheck()
                 .isNonNegative("*")
         //act
         val verificationResult = VerificationSuite()
-                .onDataStream(rawBigDecimalTimestampStream, env.config)
+                .onDataStream(bigDecimalStream, env.config)
                 .addRowLevelCheck(rowLevelCheck)
                 .build()
         //assert
-        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 10)
+        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 3)
         TestUtils.assertRowLevelConstraintResults(
                 result, rowLevelCheck, 0,
-                arrayOf(true, true, true, true, true, true, true, true, true, true)
+                arrayOf(true, false, true)
+        )
+
+    }
+
+    @Test
+    fun testMapWhenFieldValueIsBiggestDoubleExpectResultCorrect() {
+        //arrange
+        val doubleList = listOf(Double.MAX_VALUE, -Double.MAX_VALUE, 0.0)
+        val env = StreamExecutionEnvironment.createLocalEnvironment()
+        val bigDecimalStream = env.fromCollection(doubleList)
+        val rowLevelCheck = RowLevelCheck()
+                .isNonNegative("*")
+        //act
+        val verificationResult = VerificationSuite()
+                .onDataStream(bigDecimalStream, env.config)
+                .addRowLevelCheck(rowLevelCheck)
+                .build()
+        //assert
+        val result = TestUtils.collectRowLevelResultStreamAndAssertLen(verificationResult, rowLevelCheck, 3)
+        TestUtils.assertRowLevelConstraintResults(
+                result, rowLevelCheck, 0,
+                arrayOf(true, false, true)
         )
 
     }
